@@ -11,6 +11,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -75,6 +77,9 @@ class WebSocketClient(
 
     private val _metrics = MutableStateFlow(WebSocketMetrics())
     val metrics: StateFlow<WebSocketMetrics> = _metrics.asStateFlow()
+
+    private val _ackEvents = MutableSharedFlow<AckPayload>(extraBufferCapacity = 32)
+    val ackEvents: SharedFlow<AckPayload> = _ackEvents
 
     private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
