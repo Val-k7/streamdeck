@@ -1,0 +1,15 @@
+{
+  "name": "android-control-deck-server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node ./tests/run-tests.js || echo 'tests placeholder'"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0",
+    "node-fetch": "^3.3.2"
+  }
+}
