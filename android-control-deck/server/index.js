@@ -18,17 +18,50 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const app = express()
-const port = process.env.PORT || 4455
-const defaultToken = process.env.DECK_TOKEN || 'change-me'
-const handshakeSecret = process.env.HANDSHAKE_SECRET || defaultToken
+const runtimeBase = process.env.DECK_DATA_DIR
+  ? path.resolve(process.env.DECK_DATA_DIR)
+  : process.pkg
+    ? path.dirname(process.execPath)
+    : __dirname
+const templateBase = __dirname
+const configDir = path.join(runtimeBase, 'config')
+const profilesDir = path.join(runtimeBase, 'profiles')
+const logsDir = path.join(runtimeBase, 'logs')
+
+fs.mkdirSync(configDir, { recursive: true })
+fs.mkdirSync(profilesDir, { recursive: true })
+fs.mkdirSync(logsDir, { recursive: true })
+
+function readJsonSafe(filePath, fallback = {}) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+  } catch (e) {
+    console.warn('Unable to parse JSON file', { file: filePath, error: e.message })
+    return fallback
+  }
+}
+
+function ensureSeedFile(seedPath, targetPath) {
+  if (!fs.existsSync(seedPath)) return
+  if (fs.existsSync(targetPath)) return
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+  fs.copyFileSync(seedPath, targetPath)
+}
+
+const configPath = path.join(configDir, 'server.config.json')
+const configSeedPath = path.join(templateBase, 'config', 'server.config.sample.json')
+ensureSeedFile(configSeedPath, configPath)
+const config = fs.existsSync(configPath) ? readJsonSafe(configPath, {}) : {}
+
+const port = Number(process.env.PORT) || config.port || 4455
+const defaultToken = process.env.DECK_TOKEN || config.defaultToken || 'change-me'
+const handshakeSecret = process.env.HANDSHAKE_SECRET || config.handshakeSecret || defaultToken
 const tlsKey = process.env.TLS_KEY_PATH
 const tlsCert = process.env.TLS_CERT_PATH
 const logLevel = process.env.LOG_LEVEL || 'info'
 const serverStartedAt = Date.now()
 
-const logsDir = path.join(__dirname, 'logs')
-fs.mkdirSync(logsDir, { recursive: true })
+const app = express()
 
 const logger = winston.createLogger({
   level: logLevel,
@@ -67,15 +100,27 @@ const controlPayloadSchema = {
 }
 const validateControlPayload = ajv.compile(controlPayloadSchema)
 
-const mappingsPath = path.join(__dirname, 'config', 'mappings.json')
-const mappings = fs.existsSync(mappingsPath)
-  ? JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
-  : {}
+const mappingSeedSource = path.join(templateBase, 'config', 'mappings', 'default.json')
+const mappingSeedTarget = path.join(configDir, 'mappings', 'default.json')
+ensureSeedFile(mappingSeedSource, mappingSeedTarget)
 
-const profilesDir = path.join(__dirname, 'profiles')
-fs.mkdirSync(profilesDir, { recursive: true })
+function resolveConfigPath(value) {
+  if (!value) return null
+  return path.isAbsolute(value) ? value : path.join(configDir, value)
+}
 
-const tokensPath = path.join(__dirname, 'config', 'tokens.json')
+const mappingCandidates = [process.env.MAPPINGS_FILE, config.mappingsFile, 'mappings/default.json', 'mappings.json']
+const resolvedMappingsPath = mappingCandidates
+  .map(resolveConfigPath)
+  .filter(Boolean)
+  .find((candidate) => fs.existsSync(candidate))
+const mappingsPath = resolvedMappingsPath ?? resolveConfigPath(config.mappingsFile ?? 'mappings/default.json')
+const mappings = fs.existsSync(mappingsPath) ? readJsonSafe(mappingsPath, {}) : {}
+if (!fs.existsSync(mappingsPath)) {
+  logger.warn('Mapping file not found, using empty configuration', { mappingsPath })
+}
+
+const tokensPath = path.join(configDir, 'tokens.json')
 const activeTokens = new Set([defaultToken])
 function loadTokens() {
   if (fs.existsSync(tokensPath)) {
@@ -151,9 +196,11 @@ app.get('/profiles/:id', (req, res) => {
   res.type('json').send(fs.readFileSync(file, 'utf-8'))
 })
 
-const profileSchemaPath = path.join(__dirname, 'config', 'profile.schema.json')
-const profileValidator = fs.existsSync(profileSchemaPath)
-  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaPath, 'utf-8')))
+const profileSchemaCandidate = fs.existsSync(path.join(configDir, 'profile.schema.json'))
+  ? path.join(configDir, 'profile.schema.json')
+  : path.join(templateBase, 'config', 'profile.schema.json')
+const profileValidator = fs.existsSync(profileSchemaCandidate)
+  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaCandidate, 'utf-8')))
   : null
 
 app.post('/profiles/:id', (req, res) => {
