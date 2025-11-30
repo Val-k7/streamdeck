@@ -52,11 +52,11 @@ sealed class ConnectionState {
 }
 
 class WebSocketClient(
-    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+    okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .pingInterval(30, TimeUnit.SECONDS)
         .build(),
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
-    private val config: WebSocketConfig = WebSocketConfig(),
+    config: WebSocketConfig = WebSocketConfig(),
     private val networkStatusMonitor: NetworkStatusMonitor? = null,
 ) {
     private var webSocket: WebSocket? = null
@@ -65,6 +65,9 @@ class WebSocketClient(
     private val json = Json { ignoreUnknownKeys = true }
     private val inFlightMessages = mutableMapOf<String, Long>()
     private val inFlightMutex = Mutex()
+
+    private var okHttpClient: OkHttpClient = okHttpClient
+    private var config: WebSocketConfig = config
 
     private val _metrics = MutableStateFlow(WebSocketMetrics())
     val metrics: StateFlow<WebSocketMetrics> = _metrics.asStateFlow()
@@ -111,6 +114,14 @@ class WebSocketClient(
         webSocket?.close(1000, reason)
         webSocket = null
         _state.value = ConnectionState.Disconnected(reason)
+    }
+
+    fun updateClient(client: OkHttpClient) {
+        okHttpClient = client
+    }
+
+    fun updateConfig(newConfig: WebSocketConfig) {
+        config = newConfig
     }
 
     fun send(payload: String, messageId: String? = null) {

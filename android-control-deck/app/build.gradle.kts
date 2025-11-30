@@ -110,6 +110,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("androidx.collection:collection:1.4.5")
+    implementation("androidx.security:security-crypto-ktx:1.1.0-alpha06")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 

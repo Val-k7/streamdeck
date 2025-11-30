@@ -13,6 +13,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -27,7 +28,8 @@ import com.androidcontroldeck.data.preferences.ThemeMode
 @Composable
 fun SettingsScreen(
     state: SettingsState?,
-    onSettingsChanged: (SettingsState.() -> SettingsState) -> Unit,
+    handshakeSecret: String?,
+    onSettingsChanged: (SettingsState.() -> SettingsState, String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -42,6 +44,9 @@ fun SettingsScreen(
     val latency = remember(state.latencyMs) { mutableStateOf(state.latencyMs.toFloat()) }
     val theme = remember(state.themeMode) { mutableStateOf(state.themeMode) }
     val language = remember(state.language) { mutableStateOf(state.language) }
+    val useTls = remember(state.useTls) { mutableStateOf(state.useTls) }
+    val pinnedCert = remember(state.pinnedCertSha256) { mutableStateOf(state.pinnedCertSha256.orEmpty()) }
+    val secret = remember(handshakeSecret) { mutableStateOf(handshakeSecret.orEmpty()) }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         TopAppBar(
@@ -93,18 +98,44 @@ fun SettingsScreen(
             }
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column { Text("Activer TLS") }
+            Switch(checked = useTls.value, onCheckedChange = { useTls.value = it })
+        }
+        OutlinedTextField(
+            value = pinnedCert.value,
+            onValueChange = { pinnedCert.value = it.trim() },
+            label = { Text("Empreinte SHA-256 à pinner (optionnel)") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        OutlinedTextField(
+            value = secret.value,
+            onValueChange = { secret.value = it },
+            label = { Text("Secret de handshake" ) },
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Button(
             onClick = {
-                onSettingsChanged {
-                    copy(
-                        serverIp = ip.value,
-                        serverPort = port.value.toIntOrNull() ?: state.serverPort,
-                        heartbeatIntervalMs = heartbeat.value.toInt(),
-                        latencyMs = latency.value.toInt(),
-                        themeMode = theme.value,
-                        language = language.value
-                    )
-                }
+                onSettingsChanged(
+                    {
+                        copy(
+                            serverIp = ip.value,
+                            serverPort = port.value.toIntOrNull() ?: state.serverPort,
+                            heartbeatIntervalMs = heartbeat.value.toInt(),
+                            latencyMs = latency.value.toInt(),
+                            themeMode = theme.value,
+                            language = language.value,
+                            useTls = useTls.value,
+                            pinnedCertSha256 = pinnedCert.value.ifBlank { null }
+                        )
+                    },
+                    secret.value
+                )
                 onNavigateBack()
             },
             modifier = Modifier.fillMaxWidth()

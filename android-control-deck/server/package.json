@@ -8,8 +8,12 @@
     "test": "node ./tests/run-tests.js || echo 'tests placeholder'"
   },
   "dependencies": {
+    "ajv": "^8.17.1",
+    "express-rate-limit": "^7.4.1",
     "express": "^4.19.2",
-    "ws": "^8.18.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "winston": "^3.13.1",
+    "winston-daily-rotate-file": "^5.0.0",
+    "ws": "^8.18.0"
   }
 }
