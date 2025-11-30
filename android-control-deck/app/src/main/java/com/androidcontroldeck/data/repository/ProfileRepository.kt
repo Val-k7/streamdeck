@@ -7,6 +7,7 @@ import com.androidcontroldeck.data.model.ControlType
 import com.androidcontroldeck.data.model.Profile
 import com.androidcontroldeck.data.storage.ProfileSerializer
 import com.androidcontroldeck.data.storage.ProfileStorage
+import com.androidcontroldeck.data.storage.AssetCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +32,11 @@ class ProfileRepository(
 
     fun refresh() {
         scope.launch { load() }
+    }
+
+    suspend fun prime(assetCache: AssetCache? = null) {
+        load()
+        assetCache?.preload(_currentProfile.value)
     }
 
     private suspend fun load() {
@@ -107,6 +113,7 @@ class ProfileRepository(
                 col = 0,
                 label = "Start Stream",
                 colorHex = "#FF5722",
+                icon = null,
                 action = Action(type = ActionType.OBS, payload = "StartStreaming")
             ),
             Control(

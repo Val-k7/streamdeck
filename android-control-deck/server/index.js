@@ -47,7 +47,15 @@ const server = app.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`)
 })
 
-const wss = new WebSocketServer({ server, path: '/ws' })
+const wss = new WebSocketServer({
+  server,
+  path: '/ws',
+  perMessageDeflate: {
+    serverNoContextTakeover: true,
+    clientNoContextTakeover: true,
+    threshold: 512,
+  },
+})
 
 wss.on('connection', (ws, req) => {
   const auth = req.headers['authorization']
@@ -57,11 +65,29 @@ wss.on('connection', (ws, req) => {
   }
 
   ws.on('message', async (message) => {
+    const receivedAt = Date.now()
+    let payload
     try {
-      const payload = JSON.parse(message.toString())
-      const mapping = mappings[payload.controlId]
-      if (!mapping) return
+      payload = JSON.parse(message.toString())
+    } catch (e) {
+      console.error('Unable to parse message', e)
+      return
+    }
 
+    const ack = {
+      type: 'ack',
+      messageId: payload.messageId,
+      controlId: payload.controlId,
+      receivedAt,
+    }
+
+    const mapping = payload.controlId ? mappings[payload.controlId] : undefined
+    if (!mapping) {
+      ws.send(JSON.stringify({ ...ack, status: 'ignored' }))
+      return
+    }
+
+    try {
       switch (mapping.action) {
         case 'keyboard':
           await handleKeyboard(mapping.payload)
@@ -78,8 +104,17 @@ wss.on('connection', (ws, req) => {
         default:
           console.warn('Unknown action', mapping.action)
       }
+      ws.send(JSON.stringify({ ...ack, status: 'ok', processedAt: Date.now() }))
     } catch (e) {
-      console.error('Unable to parse message', e)
+      console.error('Unable to execute action', e)
+      ws.send(
+        JSON.stringify({
+          ...ack,
+          status: 'error',
+          processedAt: Date.now(),
+          error: e?.message ?? 'unknown error',
+        })
+      )
     }
   })
 
