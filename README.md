@@ -64,6 +64,17 @@ Contrôle OBS (via OBS-WebSocket)
 Contrôle audio, logiciels, macros, etc.
 
 🚀 Installation
+💡 Installation rapide (serveur PC)
+
+1. Cloner le repo puis aller dans le dossier serveur :
+   - `cd android-control-deck/server`
+2. Lancer l'installation selon votre OS :
+   - Linux / macOS : `./scripts/install.sh`
+   - Windows (PowerShell admin) : `./scripts/install.ps1`
+3. Suivre l'assistant `npm run setup` pour choisir le port, le token et le fichier de mapping (validation intégrée).
+4. Le service est créé automatiquement (systemd/launchd/SC). Vérifiez le statut ou démarrez manuellement via `npm start` si besoin.
+5. Pour une version autonome, générez les exécutables avec `npm run package` (dossier `server/dist/`), livrés avec la config par défaut et le dossier `config/mappings`.
+
 📱 Côté Android
 
 Cloner ce repo
