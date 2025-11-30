@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "ws:load-test": "node tools/ws-load-test.js",
     "test": "node ./tests/run-tests.js || echo 'tests placeholder'"
   },
   "dependencies": {

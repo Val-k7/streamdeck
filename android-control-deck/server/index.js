@@ -1,6 +1,6 @@
 import express from 'express'
 import rateLimit from 'express-rate-limit'
-import { WebSocketServer } from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import fs from 'fs'
 import path from 'path'
 import http from 'http'
@@ -51,6 +51,7 @@ const controlPayloadSchema = {
   additionalProperties: false,
   required: ['controlId', 'type', 'value', 'messageId', 'sentAt'],
   properties: {
+    kind: { type: 'string', const: 'control', default: 'control' },
     controlId: { type: 'string', minLength: 1 },
     type: { type: 'string', minLength: 1 },
     value: { type: 'number' },
@@ -65,6 +66,34 @@ const controlPayloadSchema = {
 }
 const validateControlPayload = ajv.compile(controlPayloadSchema)
 
+const profileUpdatePayloadSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kind', 'profile', 'messageId', 'sentAt'],
+  properties: {
+    kind: { type: 'string', const: 'profile:update' },
+    profile: { type: 'object' },
+    messageId: { type: 'string', minLength: 1 },
+    sentAt: { type: 'integer', minimum: 0 },
+    actor: { type: 'string' },
+  },
+}
+const validateProfileUpdatePayload = ajv.compile(profileUpdatePayloadSchema)
+
+const profileSelectPayloadSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['kind', 'profileId', 'messageId', 'sentAt'],
+  properties: {
+    kind: { type: 'string', const: 'profile:select' },
+    profileId: { type: 'string', minLength: 1 },
+    messageId: { type: 'string', minLength: 1 },
+    sentAt: { type: 'integer', minimum: 0 },
+    resetState: { type: 'boolean', default: true },
+  },
+}
+const validateProfileSelectPayload = ajv.compile(profileSelectPayloadSchema)
+
 const mappingsPath = path.join(__dirname, 'config', 'mappings.json')
 const mappings = fs.existsSync(mappingsPath)
   ? JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
@@ -72,6 +101,74 @@ const mappings = fs.existsSync(mappingsPath)
 
 const profilesDir = path.join(__dirname, 'profiles')
 fs.mkdirSync(profilesDir, { recursive: true })
+
+const profileRegistry = new Map()
+
+function computeChecksum(payload) {
+  const hash = crypto.createHash('sha256')
+  hash.update(JSON.stringify(payload))
+  return hash.digest('hex')
+}
+
+function loadProfileFromDisk(id) {
+  const file = path.join(profilesDir, `${id}.json`)
+  if (!fs.existsSync(file)) return null
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf-8'))
+    const version = Number.isInteger(parsed.version) ? parsed.version : 0
+    const checksum = parsed.checksum || computeChecksum(parsed)
+    const updatedAt = parsed.updatedAt || null
+    profileRegistry.set(id, { version, checksum, updatedAt })
+    return { profile: parsed, version, checksum, updatedAt }
+  } catch (e) {
+    logger.warn('Unable to parse profile from disk', { id, error: e.message })
+    return null
+  }
+}
+
+function loadProfileMetadata() {
+  const files = fs.readdirSync(profilesDir).filter((file) => file.endsWith('.json'))
+  files.forEach((file) => {
+    const id = path.basename(file, '.json')
+    loadProfileFromDisk(id)
+  })
+}
+
+loadProfileMetadata()
+
+function getProfileSummary() {
+  return [...profileRegistry.entries()].map(([id, meta]) => ({ id, ...meta }))
+}
+
+function saveProfile(profile, { source = 'http', actor = 'unknown' } = {}) {
+  const existing = profileRegistry.get(profile.id) || loadProfileFromDisk(profile.id)
+  const conflict = existing && Number.isInteger(profile.version) && profile.version < existing.version
+  const nextVersion = (existing?.version ?? 0) + 1
+  const updatedAt = Date.now()
+  const normalized = {
+    ...profile,
+    version: nextVersion,
+    updatedAt,
+  }
+  normalized.checksum = computeChecksum(normalized)
+  fs.writeFileSync(path.join(profilesDir, `${profile.id}.json`), JSON.stringify(normalized, null, 2))
+  profileRegistry.set(profile.id, { version: normalized.version, checksum: normalized.checksum, updatedAt })
+
+  if (conflict) {
+    logger.warn('Profile version conflict resolved with last-writer-wins', {
+      id: profile.id,
+      providedVersion: profile.version,
+      storedVersion: existing.version,
+      actor,
+      source,
+    })
+  } else {
+    logger.info('Profile saved', { id: profile.id, version: normalized.version, actor, source })
+  }
+
+  broadcastProfileUpdate(normalized, { source, conflict, actor })
+  return { profile: normalized, conflict, previousVersion: existing?.version ?? 0 }
+}
 
 const tokensPath = path.join(__dirname, 'config', 'tokens.json')
 const activeTokens = new Set([defaultToken])
@@ -139,8 +236,7 @@ app.post('/handshake/revoke', (req, res) => {
 })
 
 app.get('/profiles', (_, res) => {
-  const files = fs.readdirSync(profilesDir).filter((file) => file.endsWith('.json'))
-  res.json({ profiles: files })
+  res.json({ profiles: getProfileSummary() })
 })
 
 app.get('/profiles/:id', (req, res) => {
@@ -164,9 +260,19 @@ app.post('/profiles/:id', (req, res) => {
     return res.status(400).json({ error: 'invalid profile', details: profileValidator.errors })
   }
 
-  const payload = JSON.stringify(req.body, null, 2)
-  fs.writeFileSync(path.join(profilesDir, `${req.params.id}.json`), payload)
-  res.json({ status: 'saved' })
+  if (req.body.id !== req.params.id) {
+    logger.warn('Profile validation failed: id mismatch', { requested: req.params.id, provided: req.body.id })
+    return res.status(400).json({ error: 'id mismatch' })
+  }
+
+  const { profile, conflict, previousVersion } = saveProfile(req.body, { source: 'http' })
+  res.json({
+    status: 'saved',
+    version: profile.version,
+    checksum: profile.checksum,
+    conflict,
+    previousVersion,
+  })
 })
 
 let server
@@ -186,7 +292,26 @@ if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   })
 }
 
-const wss = new WebSocketServer({
+let wss
+function broadcastProfileUpdate(profile, meta = {}) {
+  if (!wss) return
+  const payload = JSON.stringify({
+    type: 'profile:update',
+    profile,
+    broadcastAt: Date.now(),
+    ...meta,
+  })
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload)
+    }
+  })
+}
+
+const clientSessions = new Map()
+
+wss = new WebSocketServer({
   server,
   path: '/ws',
   perMessageDeflate: {
@@ -207,7 +332,19 @@ wss.on('connection', (ws, req) => {
     return
   }
 
-  logger.info('Client connected', { ip: req.socket.remoteAddress })
+  const clientId = crypto.randomUUID()
+  logger.info('Client connected', { ip: req.socket.remoteAddress, clientId })
+
+  clientSessions.set(ws, { clientId, activeProfileId: null, controlStates: {} })
+
+  ws.send(
+    JSON.stringify({
+      type: 'welcome',
+      clientId,
+      profiles: getProfileSummary(),
+      activeProfileId: null,
+    })
+  )
 
   const recentMessages = []
 
@@ -237,63 +374,161 @@ wss.on('connection', (ws, req) => {
       return
     }
 
-    if (!validateControlPayload(payload)) {
-      logger.warn('Payload rejected by schema', { errors: validateControlPayload.errors })
+    const kind = payload.kind || 'control'
+    const session = clientSessions.get(ws)
+
+    if (kind === 'control') {
+      if (!validateControlPayload(payload)) {
+        logger.warn('Payload rejected by schema', { errors: validateControlPayload.errors })
+        ws.send(
+          JSON.stringify({
+            type: 'ack',
+            status: 'error',
+            error: 'invalid payload',
+            receivedAt,
+          })
+        )
+        return
+      }
+
+      const ack = {
+        type: 'ack',
+        messageId: payload.messageId,
+        controlId: payload.controlId,
+        receivedAt,
+      }
+
+      const mapping = payload.controlId ? mappings[payload.controlId] : undefined
+      if (session) {
+        session.controlStates[payload.controlId] = payload.value
+      }
+
+      if (!mapping) {
+        ws.send(JSON.stringify({ ...ack, status: 'ignored' }))
+        return
+      }
+
+      try {
+        switch (mapping.action) {
+          case 'keyboard':
+            await handleKeyboard(mapping.payload)
+            break
+          case 'obs':
+            await handleObs(mapping.payload)
+            break
+          case 'script':
+            await handleScript(mapping.payload)
+            break
+          case 'audio':
+            await handleAudio(mapping.payload)
+            break
+          default:
+            console.warn('Unknown action', mapping.action)
+        }
+        ws.send(JSON.stringify({ ...ack, status: 'ok', processedAt: Date.now() }))
+      } catch (e) {
+        console.error('Unable to execute action', e)
+        logger.error('Action execution error', { error: e.message })
+        ws.send(
+          JSON.stringify({
+            ...ack,
+            status: 'error',
+            processedAt: Date.now(),
+            error: e?.message ?? 'unknown error',
+          })
+        )
+      }
+      return
+    }
+
+    if (kind === 'profile:select') {
+      if (!validateProfileSelectPayload(payload)) {
+        logger.warn('Profile selection rejected by schema', { errors: validateProfileSelectPayload.errors })
+        ws.send(JSON.stringify({ type: 'profile:select:ack', status: 'error', error: 'invalid payload', receivedAt }))
+        return
+      }
+
+      const profileData = loadProfileFromDisk(payload.profileId)
+      if (!profileData) {
+        ws.send(
+          JSON.stringify({
+            type: 'profile:select:ack',
+            status: 'error',
+            error: 'profile not found',
+            receivedAt,
+            profileId: payload.profileId,
+          })
+        )
+        return
+      }
+
+      if (session) {
+        session.activeProfileId = payload.profileId
+        if (payload.resetState !== false) {
+          session.controlStates = {}
+        }
+      }
+
       ws.send(
         JSON.stringify({
-          type: 'ack',
-          status: 'error',
-          error: 'invalid payload',
+          type: 'profile:select:ack',
+          status: 'ok',
+          profileId: payload.profileId,
+          receivedAt,
+          profile: profileData.profile,
+        })
+      )
+      return
+    }
+
+    if (kind === 'profile:update') {
+      if (!validateProfileUpdatePayload(payload)) {
+        logger.warn('Profile update rejected by schema', { errors: validateProfileUpdatePayload.errors })
+        ws.send(JSON.stringify({ type: 'profile:update:ack', status: 'error', error: 'invalid payload', receivedAt }))
+        return
+      }
+
+      if (!profileValidator) {
+        ws.send(JSON.stringify({ type: 'profile:update:ack', status: 'error', error: 'profile validator unavailable' }))
+        return
+      }
+
+      if (!profileValidator(payload.profile)) {
+        ws.send(
+          JSON.stringify({
+            type: 'profile:update:ack',
+            status: 'error',
+            error: 'invalid profile',
+            details: profileValidator.errors,
+          })
+        )
+        return
+      }
+
+      const { profile: saved, conflict, previousVersion } = saveProfile(payload.profile, {
+        source: 'websocket',
+        actor: session?.clientId ?? 'ws',
+      })
+
+      ws.send(
+        JSON.stringify({
+          type: 'profile:update:ack',
+          status: 'ok',
+          profileId: saved.id,
+          version: saved.version,
+          conflict,
+          previousVersion,
           receivedAt,
         })
       )
       return
     }
 
-    const ack = {
-      type: 'ack',
-      messageId: payload.messageId,
-      controlId: payload.controlId,
-      receivedAt,
-    }
-
-    const mapping = payload.controlId ? mappings[payload.controlId] : undefined
-    if (!mapping) {
-      ws.send(JSON.stringify({ ...ack, status: 'ignored' }))
-      return
-    }
-
-    try {
-      switch (mapping.action) {
-        case 'keyboard':
-          await handleKeyboard(mapping.payload)
-          break
-        case 'obs':
-          await handleObs(mapping.payload)
-          break
-        case 'script':
-          await handleScript(mapping.payload)
-          break
-        case 'audio':
-          await handleAudio(mapping.payload)
-          break
-        default:
-          console.warn('Unknown action', mapping.action)
-      }
-      ws.send(JSON.stringify({ ...ack, status: 'ok', processedAt: Date.now() }))
-    } catch (e) {
-      console.error('Unable to execute action', e)
-      logger.error('Action execution error', { error: e.message })
-      ws.send(
-        JSON.stringify({
-          ...ack,
-          status: 'error',
-          processedAt: Date.now(),
-          error: e?.message ?? 'unknown error',
-        })
-      )
-    }
+    ws.send(JSON.stringify({ type: 'error', error: 'unknown message kind', kind }))
   })
 
-  ws.on('close', () => console.log('Client disconnected'))
+  ws.on('close', () => {
+    console.log('Client disconnected', clientSessions.get(ws)?.clientId ?? '')
+    clientSessions.delete(ws)
+  })
 })
