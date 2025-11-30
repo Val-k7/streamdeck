@@ -24,15 +24,17 @@ const defaultToken = process.env.DECK_TOKEN || 'change-me'
 const handshakeSecret = process.env.HANDSHAKE_SECRET || defaultToken
 const tlsKey = process.env.TLS_KEY_PATH
 const tlsCert = process.env.TLS_CERT_PATH
+const logLevel = process.env.LOG_LEVEL || 'info'
+const serverStartedAt = Date.now()
 
 const logsDir = path.join(__dirname, 'logs')
 fs.mkdirSync(logsDir, { recursive: true })
 
 const logger = winston.createLogger({
-  level: 'info',
+  level: logLevel,
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console({ level: 'info' }),
+    new winston.transports.Console({ level: logLevel }),
     new DailyRotateFile({
       dirname: logsDir,
       filename: 'security-%DATE%.log',
@@ -40,7 +42,7 @@ const logger = winston.createLogger({
       zippedArchive: true,
       maxFiles: '14d',
       maxSize: '5m',
-      level: 'info',
+      level: logLevel,
     }),
   ],
 })
@@ -170,6 +172,8 @@ app.post('/profiles/:id', (req, res) => {
 })
 
 let server
+let wss
+let totalConnections = 0
 if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   const credentials = {
     key: fs.readFileSync(tlsKey),
@@ -186,7 +190,7 @@ if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   })
 }
 
-const wss = new WebSocketServer({
+wss = new WebSocketServer({
   server,
   path: '/ws',
   perMessageDeflate: {
@@ -194,6 +198,16 @@ const wss = new WebSocketServer({
     clientNoContextTakeover: true,
     threshold: 512,
   },
+})
+
+app.get('/diagnostics', (req, res) => {
+  res.json({
+    status: 'ok',
+    logLevel: logger.level,
+    uptimeSeconds: Math.round((Date.now() - serverStartedAt) / 1000),
+    activeWebsocketConnections: wss?.clients?.size ?? 0,
+    totalConnections,
+  })
 })
 
 wss.on('connection', (ws, req) => {
@@ -208,6 +222,7 @@ wss.on('connection', (ws, req) => {
   }
 
   logger.info('Client connected', { ip: req.socket.remoteAddress })
+  totalConnections += 1
 
   const recentMessages = []
 
@@ -249,6 +264,12 @@ wss.on('connection', (ws, req) => {
       )
       return
     }
+
+    logger.debug('Control payload received', {
+      controlId: payload.controlId,
+      type: payload.type,
+      meta: payload.meta,
+    })
 
     const ack = {
       type: 'ack',
@@ -295,5 +316,6 @@ wss.on('connection', (ws, req) => {
     }
   })
 
-  ws.on('close', () => console.log('Client disconnected'))
+  ws.on('close', () => logger.info('Client disconnected', { ip: req.socket.remoteAddress }))
+  ws.on('error', (error) => logger.error('Websocket error', { error: error.message }))
 })
