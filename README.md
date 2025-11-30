@@ -1,1 +1,244 @@
-# streamdeck
+🎛️ Android Control Deck
+
+Un Stream Deck amélioré pour Android — avec faders, boutons avancés et profils entièrement personnalisables.
+
+Android Control Deck transforme votre smartphone ou tablette Android en surface de contrôle polyvalente : lancement d’actions, commandes OBS, raccourcis, faders, encodeurs virtuels, profils multiples… le tout via réseau local.
+
+✨ Fonctionnalités
+🧩 Types de contrôleurs
+
+Boutons
+
+Momentary (appui maintenu)
+
+Toggle (bascule ON/OFF)
+
+Faders / Sliders
+
+Idéal pour volume, transitions, paramètres continus
+
+Encodeurs / “Knobs” virtuels
+
+Rotation virtuelle avec glissement
+
+Pads et boutons colorés
+
+Pour scènes OBS, cues audio, macros, etc.
+
+🗂️ Profils entièrement personnalisables
+
+Mise en page libre sous forme de grille
+
+Taille adaptable (col/row)
+
+Personnalisation complète :
+
+couleur, icône, label
+
+action associée
+
+dimensions du widget (1×1, 2×1, 2×2…)
+
+Import/export en JSON
+
+Interface d’édition simple et intégrée
+
+🔌 Communication réseau
+
+WebSocket en LAN (Wi-Fi)
+
+Temps réel, faible latence
+
+Compatible Windows, macOS, Linux
+
+🖥️ Serveur PC
+
+Fourni en Node.js ou Python, permettant :
+
+Exécution de scripts (bash, batch, python…)
+
+Raccourcis clavier
+
+Contrôle OBS (via OBS-WebSocket)
+
+Contrôle audio, logiciels, macros, etc.
+
+🚀 Installation
+📱 Côté Android
+
+Cloner ce repo
+
+Ouvrir dans Android Studio (Arctic Fox ou +)
+
+Lancer l’app sur un appareil Android
+
+Dans “Paramètres”, entrer l’adresse IP du serveur PC
+
+🖥️ Côté PC
+
+Installer Node.js (ou Python >3.9)
+
+Aller dans le dossier /server
+
+Installer les dépendances :
+
+npm install
+# ou
+pip install -r requirements.txt
+
+
+Lancer le serveur :
+
+npm start
+# ou
+python server.py
+
+📡 Fonctionnement général
+1. Android Deck ⇆ Serveur PC via WebSocket
+
+Chaque interaction envoie un message JSON comme :
+
+{
+  "controlId": "btn_start",
+  "type": "BUTTON",
+  "value": 1
+}
+
+2. Le serveur exécute une action associée :
+
+Exemple de configuration sur PC :
+
+{
+  "btn_start": {
+    "action": "keyboard",
+    "payload": "CTRL+SHIFT+S"
+  },
+  "fader_vol": {
+    "action": "obs_set_volume",
+    "payload": "mic"
+  }
+}
+
+🧱 Architecture du projet
+📱 Côté Android
+android-control-deck/
+│
+├── app/
+│   ├── data/
+│   │   ├── model/     # Control, Profile, Action
+│   │   ├── storage/   # JSON, Room DB
+│   │
+│   ├── network/       # WebSocket client
+│   ├── ui/
+│   │   ├── components/ # ButtonView, FaderView, KnobView...
+│   │   ├── screens/    # ProfileScreen, EditorScreen...
+│   │
+│   ├── util/          # Helpers
+│
+└── server/             # Serveur Node.js ou Python
+
+🖥️ Côté Serveur
+server/
+│
+├── index.js / server.py
+├── actions/
+│   ├── keyboard.js
+│   ├── obs.js
+│   ├── scripts.js
+│
+└── config/
+    └── mappings.json
+
+🧩 Format des profils
+
+Les profils sont stockés en JSON sous cette forme :
+
+{
+  "id": "default_profile",
+  "name": "My Deck",
+  "rows": 3,
+  "cols": 5,
+  "controls": [
+    {
+      "id": "btn_obs_start",
+      "type": "BUTTON",
+      "row": 0,
+      "col": 0,
+      "label": "Start Stream",
+      "colorHex": "#FF5722",
+      "action": {
+        "type": "obs",
+        "payload": "StartStreaming"
+      }
+    },
+    {
+      "id": "fader_audio",
+      "type": "FADER",
+      "row": 1,
+      "col": 0,
+      "minValue": 0,
+      "maxValue": 100,
+      "action": {
+        "type": "obs_volume",
+        "payload": "Mic/Aux"
+      }
+    }
+  ]
+}
+
+🛠️ Développement
+Construire l'UI (Jetpack Compose)
+
+L’interface est entièrement dynamique et générée selon le JSON.
+
+Exemple d’affichage d’un profil :
+
+ProfileScreen(
+    profile = currentProfile,
+    onControlEvent = { control, value ->
+        websocket.send(control.id, value)
+    }
+)
+
+
+Exemple d’un fader :
+
+Slider(
+    value = sliderValue,
+    onValueChange = {
+        sliderValue = it
+        onControlEvent(control, it)
+    }
+)
+
+🧪 Roadmap
+⏳ Version Beta
+
+ Boutons et faders 100% fonctionnels
+
+ Multi-profils
+
+ Éditeur de layout sur Android
+
+ Serveur PC avec actions clavier + scripts
+
+🚀 Version 1.0
+
+ Actions OBS complètes
+
+ Encodeurs virtuels
+
+ Import / Export de profils
+
+ Thèmes personnalisés
+
+ Éditeur visuel côté Web
+
+🤝 Contributions
+
+Les PRs sont les bienvenues !
+Guidelines à venir sous /CONTRIBUTING.md.
+
+📜 Licence
+
+MIT — usage libre, modification et redistribution autorisés.
