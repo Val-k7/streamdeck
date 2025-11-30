@@ -28,6 +28,7 @@ class ProfileRepositoryTest {
     private val dispatcher = StandardTestDispatcher()
     private val scope = TestScope(dispatcher)
     private val serializer = ProfileSerializer()
+    private val strings: (Int) -> String = { "test" }
     private lateinit var storage: ProfileStorage
 
     @Before
@@ -40,7 +41,7 @@ class ProfileRepositoryTest {
     fun `creates default profile when none are persisted`() = runTest(dispatcher) {
         coEvery { storage.loadProfiles() } returns emptyList()
 
-        val repository = ProfileRepository(storage, serializer, scope)
+        val repository = ProfileRepository(storage, serializer, scope, strings)
         advanceUntilIdle()
 
         val current = repository.currentProfile.value
@@ -62,7 +63,7 @@ class ProfileRepositoryTest {
         )
         coEvery { storage.loadProfiles() } returns listOf(initial)
 
-        val repository = ProfileRepository(storage, serializer, scope)
+        val repository = ProfileRepository(storage, serializer, scope, strings)
         advanceUntilIdle()
 
         val updated = initial.copy(name = "Updated", checksum = "")
@@ -97,7 +98,7 @@ class ProfileRepositoryTest {
         val assetCache = mockk<AssetCache>(relaxed = true)
         coEvery { storage.loadProfiles() } returns listOf(profile)
 
-        val repository = ProfileRepository(storage, serializer, scope)
+        val repository = ProfileRepository(storage, serializer, scope, strings)
         advanceUntilIdle()
 
         repository.prime(assetCache)

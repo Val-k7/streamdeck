@@ -16,7 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.androidcontroldeck.AppContainer
+import com.androidcontroldeck.R
 import com.androidcontroldeck.ui.navigation.ControlDeckNavHost
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,14 +31,20 @@ fun ControlDeckApp(container: AppContainer) {
         modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Android Control Deck") },
+                title = { Text(stringResource(R.string.control_deck_title), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 colors = TopAppBarDefaults.topAppBarColors(),
                 actions = {
                     IconButton(onClick = { /* navigation handled in screens */ }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editor")
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.control_deck_action_editor)
+                        )
                     }
                     IconButton(onClick = { /* navigation handled in screens */ }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.control_deck_action_settings)
+                        )
                     }
                 }
             )

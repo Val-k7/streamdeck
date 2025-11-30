@@ -44,7 +44,9 @@ import androidx.compose.ui.input.pointer.consume
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.androidcontroldeck.R
 import com.androidcontroldeck.data.model.Control
 import com.androidcontroldeck.data.model.ControlType
 import com.androidcontroldeck.data.model.Profile
@@ -71,7 +73,7 @@ fun EditorScreen(
     LaunchedEffect(profile) { editableProfile.value = profile }
 
     if (editableProfile.value == null) {
-        Text("Aucun profil à éditer", modifier = modifier.padding(16.dp))
+        Text(stringResource(R.string.editor_no_profile), modifier = modifier.padding(16.dp))
         return
     }
 
@@ -79,10 +81,10 @@ fun EditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Éditeur de layout") },
+                title = { Text(stringResource(R.string.editor_title), maxLines = 2) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.Save, contentDescription = "Back")
+                        Icon(Icons.Default.Save, contentDescription = stringResource(R.string.editor_back))
                     }
                 },
                 actions = {
@@ -95,14 +97,14 @@ fun EditorScreen(
                                 onProfileChanged(editableProfile.value!!)
                             }
                         }
-                    }) { Icon(Icons.Default.Duplicate, contentDescription = "Duplicate") }
+                    }) { Icon(Icons.Default.Duplicate, contentDescription = stringResource(R.string.editor_duplicate)) }
 
                     IconButton(onClick = {
                         selectedControlId.value?.let { id ->
                             editableProfile.value = workingProfile.copy(controls = workingProfile.controls.filterNot { it.id == id })
                             onProfileChanged(editableProfile.value!!)
                         }
-                    }) { Icon(Icons.Default.Delete, contentDescription = "Delete") }
+                    }) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.editor_delete)) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors()
             )
@@ -114,11 +116,11 @@ fun EditorScreen(
                     type = ControlType.BUTTON,
                     row = 0,
                     col = 0,
-                    label = "Nouveau"
+                    label = stringResource(R.string.editor_new_control)
                 )
                 editableProfile.value = workingProfile.copy(controls = workingProfile.controls + newControl)
                 onProfileChanged(editableProfile.value!!)
-            }) { Icon(Icons.Default.Add, contentDescription = "Ajouter") }
+            }) { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.editor_add)) }
         }
     ) { padding ->
         Column(modifier = modifier.padding(padding)) {
@@ -261,26 +263,26 @@ private fun PropertyPanel(control: Control, onChange: (Control) -> Unit) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Propriétés", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.editor_properties), style = MaterialTheme.typography.titleMedium)
             OutlinedTextField(
                 value = control.label,
                 onValueChange = { onChange(control.copy(label = it)) },
-                label = { Text("Label") },
+                label = { Text(stringResource(R.string.editor_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AssistChip(onClick = { onChange(control.copy(type = ControlType.BUTTON)) }, label = { Text("Bouton") })
-                AssistChip(onClick = { onChange(control.copy(type = ControlType.TOGGLE)) }, label = { Text("Toggle") })
-                AssistChip(onClick = { onChange(control.copy(type = ControlType.FADER)) }, label = { Text("Fader") })
+                AssistChip(onClick = { onChange(control.copy(type = ControlType.BUTTON)) }, label = { Text(stringResource(R.string.editor_type_button)) })
+                AssistChip(onClick = { onChange(control.copy(type = ControlType.TOGGLE)) }, label = { Text(stringResource(R.string.editor_type_toggle)) })
+                AssistChip(onClick = { onChange(control.copy(type = ControlType.FADER)) }, label = { Text(stringResource(R.string.editor_type_fader)) })
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                AssistChip(onClick = { onChange(control.copy(type = ControlType.KNOB)) }, label = { Text("Knob") })
-                AssistChip(onClick = { onChange(control.copy(type = ControlType.PAD)) }, label = { Text("Pad") })
+                AssistChip(onClick = { onChange(control.copy(type = ControlType.KNOB)) }, label = { Text(stringResource(R.string.editor_type_knob)) })
+                AssistChip(onClick = { onChange(control.copy(type = ControlType.PAD)) }, label = { Text(stringResource(R.string.editor_type_pad)) })
             }
 
-            Text(text = "Largeur: ${control.colSpan}")
+            Text(text = stringResource(R.string.editor_width, control.colSpan))
             Slider(
                 value = control.colSpan.toFloat(),
                 onValueChange = { onChange(control.copy(colSpan = it.roundToInt().coerceIn(1, 3))) },
@@ -289,7 +291,7 @@ private fun PropertyPanel(control: Control, onChange: (Control) -> Unit) {
                 modifier = Modifier.testTag("width_slider")
             )
 
-            Text(text = "Hauteur: ${control.rowSpan}")
+            Text(text = stringResource(R.string.editor_height, control.rowSpan))
             Slider(
                 value = control.rowSpan.toFloat(),
                 onValueChange = { onChange(control.copy(rowSpan = it.roundToInt().coerceIn(1, 3))) },
