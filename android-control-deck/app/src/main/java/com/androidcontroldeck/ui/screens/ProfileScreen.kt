@@ -17,7 +17,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.androidcontroldeck.data.model.Control
@@ -71,6 +71,7 @@ fun ProfileScreen(
                         .animateItemPlacement()
                         .fillMaxSize()
                         .aspectRatio(heightRatio)
+                        .testTag("control_${control.id}")
                 )
 
                 ControlType.TOGGLE -> ToggleControl(
@@ -82,6 +83,7 @@ fun ProfileScreen(
                         .animateItemPlacement()
                         .fillMaxSize()
                         .aspectRatio(heightRatio)
+                        .testTag("control_${control.id}")
                 )
 
                 ControlType.FADER -> FaderControl(
@@ -94,6 +96,7 @@ fun ProfileScreen(
                         .animateItemPlacement()
                         .fillMaxSize()
                         .aspectRatio(heightRatio)
+                        .testTag("control_${control.id}")
                 )
 
                 ControlType.KNOB -> KnobControl(
@@ -106,6 +109,7 @@ fun ProfileScreen(
                         .animateItemPlacement()
                         .fillMaxSize()
                         .aspectRatio(1f)
+                        .testTag("control_${control.id}")
                 )
 
                 ControlType.PAD -> PadControl(
@@ -117,6 +121,7 @@ fun ProfileScreen(
                         .animateItemPlacement()
                         .fillMaxSize()
                         .aspectRatio(heightRatio)
+                        .testTag("control_${control.id}")
                 )
             }
         }

@@ -1,7 +1,11 @@
+import org.gradle.testing.jacoco.plugins.JacocoReport
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("jacoco")
 }
 
 android {
@@ -44,6 +48,47 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+tasks.withType<Test>().configureEach {
+    extensions.configure<JacocoTaskExtension> {
+        isIncludeNoLocationClasses = true
+    }
+    testLogging {
+        events("passed", "failed", "skipped")
+    }
+}
+
+tasks.register<JacocoReport>("jacocoDebugReport") {
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    val fileFilter = listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/android/**/*"
+    )
+
+    val debugTree = fileTree("${buildDir}/tmp/kotlin-classes/debug") { exclude(fileFilter) }
+    val javaDebugTree = fileTree("${buildDir}/intermediates/javac/debug/classes") { exclude(fileFilter) }
+
+    classDirectories.setFrom(files(debugTree, javaDebugTree))
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(fileTree(buildDir) { include("**/jacoco/testDebugUnitTest.exec", "**/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec") })
 }
 
 dependencies {
@@ -70,4 +115,14 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.test:core:1.6.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("io.mockk:mockk:1.13.12")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("org.robolectric:robolectric:4.13")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
