@@ -234,6 +234,14 @@ Slider(
 
  Éditeur visuel côté Web
 
+♿ Accessibilité (Android)
+
+- Contrôles Compose avec cible tactile minimale de 48dp, contour de focus visible, rôle TalkBack/VoiceOver et `contentDescription`.
+- Navigation clavier/d-pad prise en charge via `focusOrder`, `FocusRequester` et raccourcis flèche/centre.
+- Préférences d’accessibilité dans `SettingsScreen` (animations réduites, haptique, police agrandie).
+- Couleurs à contraste élevé par défaut pour satisfaire AA/AAA et labels/états exposés dans la hiérarchie de sémantique.
+- Vérifier avec l’Inspecteur d’accessibilité Android Studio et corriger tout élément non conforme avant livraison.
+
 🤝 Contributions
 
 Les PRs sont les bienvenues !
