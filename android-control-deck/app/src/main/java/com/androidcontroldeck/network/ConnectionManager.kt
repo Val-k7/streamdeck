@@ -1,8 +1,9 @@
 package com.androidcontroldeck.network
 
-import android.util.Log
 import com.androidcontroldeck.data.preferences.SettingsRepository
 import com.androidcontroldeck.data.preferences.SettingsState
+import com.androidcontroldeck.logging.DiagnosticsRepository
+import com.androidcontroldeck.logging.UnifiedLogger
 import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +20,8 @@ class ConnectionManager(
     private val settingsRepository: SettingsRepository,
     private val webSocketClient: WebSocketClient,
     private val authRepository: AuthRepository,
+    private val diagnosticsRepository: DiagnosticsRepository,
+    private val logger: UnifiedLogger,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     val settings: StateFlow<SettingsState> = settingsRepository.settings
@@ -63,16 +66,19 @@ class ConnectionManager(
                     certificatePinner
                 )
             }.onFailure { error ->
-                Log.e("ConnectionManager", "Handshake failed", error)
+                logger.logNetworkError("Handshake failed", error)
+                diagnosticsRepository.recordNetworkFailure("Handshake failed: ${error.message}", error)
             }.getOrNull()
         }
 
         val url = "$scheme://${state.serverIp}:${state.serverPort}/ws"
         val headers = token?.let { mapOf("Authorization" to "Bearer $it") }
             ?: run {
-                Log.w("ConnectionManager", "No token available, skipping connection")
+                logger.logNetworkError("No token available, skipping connection")
                 return
             }
+        diagnosticsRepository.clearManualNetworkFailure()
+        logger.logInfo("Opening websocket", mapOf("url" to url))
         webSocketClient.connect(url, headers)
     }
 

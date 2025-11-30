@@ -18,21 +18,56 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const app = express()
-const port = process.env.PORT || 4455
-const defaultToken = process.env.DECK_TOKEN || 'change-me'
-const handshakeSecret = process.env.HANDSHAKE_SECRET || defaultToken
-const tlsKey = process.env.TLS_KEY_PATH
-const tlsCert = process.env.TLS_CERT_PATH
+const runtimeBase = process.env.DECK_DATA_DIR
+  ? path.resolve(process.env.DECK_DATA_DIR)
+  : process.pkg
+    ? path.dirname(process.execPath)
+    : __dirname
+const templateBase = __dirname
+const configDir = path.join(runtimeBase, 'config')
+const profilesDir = path.join(runtimeBase, 'profiles')
+const logsDir = path.join(runtimeBase, 'logs')
 
-const logsDir = path.join(__dirname, 'logs')
+fs.mkdirSync(configDir, { recursive: true })
+fs.mkdirSync(profilesDir, { recursive: true })
 fs.mkdirSync(logsDir, { recursive: true })
 
+function readJsonSafe(filePath, fallback = {}) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+  } catch (e) {
+    console.warn('Unable to parse JSON file', { file: filePath, error: e.message })
+    return fallback
+  }
+}
+
+function ensureSeedFile(seedPath, targetPath) {
+  if (!fs.existsSync(seedPath)) return
+  if (fs.existsSync(targetPath)) return
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+  fs.copyFileSync(seedPath, targetPath)
+}
+
+const configPath = path.join(configDir, 'server.config.json')
+const configSeedPath = path.join(templateBase, 'config', 'server.config.sample.json')
+ensureSeedFile(configSeedPath, configPath)
+const config = fs.existsSync(configPath) ? readJsonSafe(configPath, {}) : {}
+
+const port = Number(process.env.PORT) || config.port || 4455
+const defaultToken = process.env.DECK_TOKEN || config.defaultToken || 'change-me'
+const handshakeSecret = process.env.HANDSHAKE_SECRET || config.handshakeSecret || defaultToken
+const tlsKey = process.env.TLS_KEY_PATH
+const tlsCert = process.env.TLS_CERT_PATH
+const logLevel = process.env.LOG_LEVEL || 'info'
+const serverStartedAt = Date.now()
+
+const app = express()
+
 const logger = winston.createLogger({
-  level: 'info',
+  level: logLevel,
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console({ level: 'info' }),
+    new winston.transports.Console({ level: logLevel }),
     new DailyRotateFile({
       dirname: logsDir,
       filename: 'security-%DATE%.log',
@@ -40,7 +75,7 @@ const logger = winston.createLogger({
       zippedArchive: true,
       maxFiles: '14d',
       maxSize: '5m',
-      level: 'info',
+      level: logLevel,
     }),
   ],
 })
@@ -66,111 +101,27 @@ const controlPayloadSchema = {
 }
 const validateControlPayload = ajv.compile(controlPayloadSchema)
 
-const profileUpdatePayloadSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['kind', 'profile', 'messageId', 'sentAt'],
-  properties: {
-    kind: { type: 'string', const: 'profile:update' },
-    profile: { type: 'object' },
-    messageId: { type: 'string', minLength: 1 },
-    sentAt: { type: 'integer', minimum: 0 },
-    actor: { type: 'string' },
-  },
-}
-const validateProfileUpdatePayload = ajv.compile(profileUpdatePayloadSchema)
+const mappingSeedSource = path.join(templateBase, 'config', 'mappings', 'default.json')
+const mappingSeedTarget = path.join(configDir, 'mappings', 'default.json')
+ensureSeedFile(mappingSeedSource, mappingSeedTarget)
 
-const profileSelectPayloadSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['kind', 'profileId', 'messageId', 'sentAt'],
-  properties: {
-    kind: { type: 'string', const: 'profile:select' },
-    profileId: { type: 'string', minLength: 1 },
-    messageId: { type: 'string', minLength: 1 },
-    sentAt: { type: 'integer', minimum: 0 },
-    resetState: { type: 'boolean', default: true },
-  },
-}
-const validateProfileSelectPayload = ajv.compile(profileSelectPayloadSchema)
-
-const mappingsPath = path.join(__dirname, 'config', 'mappings.json')
-const mappings = fs.existsSync(mappingsPath)
-  ? JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
-  : {}
-
-const profilesDir = path.join(__dirname, 'profiles')
-fs.mkdirSync(profilesDir, { recursive: true })
-
-const profileRegistry = new Map()
-
-function computeChecksum(payload) {
-  const hash = crypto.createHash('sha256')
-  hash.update(JSON.stringify(payload))
-  return hash.digest('hex')
+function resolveConfigPath(value) {
+  if (!value) return null
+  return path.isAbsolute(value) ? value : path.join(configDir, value)
 }
 
-function loadProfileFromDisk(id) {
-  const file = path.join(profilesDir, `${id}.json`)
-  if (!fs.existsSync(file)) return null
-  try {
-    const parsed = JSON.parse(fs.readFileSync(file, 'utf-8'))
-    const version = Number.isInteger(parsed.version) ? parsed.version : 0
-    const checksum = parsed.checksum || computeChecksum(parsed)
-    const updatedAt = parsed.updatedAt || null
-    profileRegistry.set(id, { version, checksum, updatedAt })
-    return { profile: parsed, version, checksum, updatedAt }
-  } catch (e) {
-    logger.warn('Unable to parse profile from disk', { id, error: e.message })
-    return null
-  }
+const mappingCandidates = [process.env.MAPPINGS_FILE, config.mappingsFile, 'mappings/default.json', 'mappings.json']
+const resolvedMappingsPath = mappingCandidates
+  .map(resolveConfigPath)
+  .filter(Boolean)
+  .find((candidate) => fs.existsSync(candidate))
+const mappingsPath = resolvedMappingsPath ?? resolveConfigPath(config.mappingsFile ?? 'mappings/default.json')
+const mappings = fs.existsSync(mappingsPath) ? readJsonSafe(mappingsPath, {}) : {}
+if (!fs.existsSync(mappingsPath)) {
+  logger.warn('Mapping file not found, using empty configuration', { mappingsPath })
 }
 
-function loadProfileMetadata() {
-  const files = fs.readdirSync(profilesDir).filter((file) => file.endsWith('.json'))
-  files.forEach((file) => {
-    const id = path.basename(file, '.json')
-    loadProfileFromDisk(id)
-  })
-}
-
-loadProfileMetadata()
-
-function getProfileSummary() {
-  return [...profileRegistry.entries()].map(([id, meta]) => ({ id, ...meta }))
-}
-
-function saveProfile(profile, { source = 'http', actor = 'unknown' } = {}) {
-  const existing = profileRegistry.get(profile.id) || loadProfileFromDisk(profile.id)
-  const conflict = existing && Number.isInteger(profile.version) && profile.version < existing.version
-  const nextVersion = (existing?.version ?? 0) + 1
-  const updatedAt = Date.now()
-  const normalized = {
-    ...profile,
-    version: nextVersion,
-    updatedAt,
-  }
-  normalized.checksum = computeChecksum(normalized)
-  fs.writeFileSync(path.join(profilesDir, `${profile.id}.json`), JSON.stringify(normalized, null, 2))
-  profileRegistry.set(profile.id, { version: normalized.version, checksum: normalized.checksum, updatedAt })
-
-  if (conflict) {
-    logger.warn('Profile version conflict resolved with last-writer-wins', {
-      id: profile.id,
-      providedVersion: profile.version,
-      storedVersion: existing.version,
-      actor,
-      source,
-    })
-  } else {
-    logger.info('Profile saved', { id: profile.id, version: normalized.version, actor, source })
-  }
-
-  broadcastProfileUpdate(normalized, { source, conflict, actor })
-  return { profile: normalized, conflict, previousVersion: existing?.version ?? 0 }
-}
-
-const tokensPath = path.join(__dirname, 'config', 'tokens.json')
+const tokensPath = path.join(configDir, 'tokens.json')
 const activeTokens = new Set([defaultToken])
 function loadTokens() {
   if (fs.existsSync(tokensPath)) {
@@ -245,9 +196,11 @@ app.get('/profiles/:id', (req, res) => {
   res.type('json').send(fs.readFileSync(file, 'utf-8'))
 })
 
-const profileSchemaPath = path.join(__dirname, 'config', 'profile.schema.json')
-const profileValidator = fs.existsSync(profileSchemaPath)
-  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaPath, 'utf-8')))
+const profileSchemaCandidate = fs.existsSync(path.join(configDir, 'profile.schema.json'))
+  ? path.join(configDir, 'profile.schema.json')
+  : path.join(templateBase, 'config', 'profile.schema.json')
+const profileValidator = fs.existsSync(profileSchemaCandidate)
+  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaCandidate, 'utf-8')))
   : null
 
 app.post('/profiles/:id', (req, res) => {
@@ -276,6 +229,8 @@ app.post('/profiles/:id', (req, res) => {
 })
 
 let server
+let wss
+let totalConnections = 0
 if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   const credentials = {
     key: fs.readFileSync(tlsKey),
@@ -292,25 +247,6 @@ if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   })
 }
 
-let wss
-function broadcastProfileUpdate(profile, meta = {}) {
-  if (!wss) return
-  const payload = JSON.stringify({
-    type: 'profile:update',
-    profile,
-    broadcastAt: Date.now(),
-    ...meta,
-  })
-
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(payload)
-    }
-  })
-}
-
-const clientSessions = new Map()
-
 wss = new WebSocketServer({
   server,
   path: '/ws',
@@ -319,6 +255,16 @@ wss = new WebSocketServer({
     clientNoContextTakeover: true,
     threshold: 512,
   },
+})
+
+app.get('/diagnostics', (req, res) => {
+  res.json({
+    status: 'ok',
+    logLevel: logger.level,
+    uptimeSeconds: Math.round((Date.now() - serverStartedAt) / 1000),
+    activeWebsocketConnections: wss?.clients?.size ?? 0,
+    totalConnections,
+  })
 })
 
 wss.on('connection', (ws, req) => {
@@ -332,19 +278,8 @@ wss.on('connection', (ws, req) => {
     return
   }
 
-  const clientId = crypto.randomUUID()
-  logger.info('Client connected', { ip: req.socket.remoteAddress, clientId })
-
-  clientSessions.set(ws, { clientId, activeProfileId: null, controlStates: {} })
-
-  ws.send(
-    JSON.stringify({
-      type: 'welcome',
-      clientId,
-      profiles: getProfileSummary(),
-      activeProfileId: null,
-    })
-  )
+  logger.info('Client connected', { ip: req.socket.remoteAddress })
+  totalConnections += 1
 
   const recentMessages = []
 
@@ -481,12 +416,18 @@ wss.on('connection', (ws, req) => {
       return
     }
 
-    if (kind === 'profile:update') {
-      if (!validateProfileUpdatePayload(payload)) {
-        logger.warn('Profile update rejected by schema', { errors: validateProfileUpdatePayload.errors })
-        ws.send(JSON.stringify({ type: 'profile:update:ack', status: 'error', error: 'invalid payload', receivedAt }))
-        return
-      }
+    logger.debug('Control payload received', {
+      controlId: payload.controlId,
+      type: payload.type,
+      meta: payload.meta,
+    })
+
+    const ack = {
+      type: 'ack',
+      messageId: payload.messageId,
+      controlId: payload.controlId,
+      receivedAt,
+    }
 
       if (!profileValidator) {
         ws.send(JSON.stringify({ type: 'profile:update:ack', status: 'error', error: 'profile validator unavailable' }))
@@ -527,8 +468,6 @@ wss.on('connection', (ws, req) => {
     ws.send(JSON.stringify({ type: 'error', error: 'unknown message kind', kind }))
   })
 
-  ws.on('close', () => {
-    console.log('Client disconnected', clientSessions.get(ws)?.clientId ?? '')
-    clientSessions.delete(ws)
-  })
+  ws.on('close', () => logger.info('Client disconnected', { ip: req.socket.remoteAddress }))
+  ws.on('error', (error) => logger.error('Websocket error', { error: error.message }))
 })
