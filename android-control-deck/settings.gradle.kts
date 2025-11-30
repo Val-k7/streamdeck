@@ -18,3 +18,4 @@ rootProject.name = "android-control-deck"
 include(":app")
 include(":core:design")
 include(":core:ui")
+include(":benchmark")

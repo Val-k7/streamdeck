@@ -8,5 +8,7 @@ data class ControlPayload(
     @SerialName("controlId") val controlId: String,
     val type: String,
     val value: Float,
-    val meta: Map<String, String> = emptyMap()
+    val meta: Map<String, String> = emptyMap(),
+    @SerialName("messageId") val messageId: String,
+    @SerialName("sentAt") val sentAt: Long
 )

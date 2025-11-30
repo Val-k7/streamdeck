@@ -44,7 +44,8 @@ fun ControlDeckNavHost(
                     container.controlEventSender.send(control.id, control.type.name, value)
                 },
                 onNavigateEditor = { navController.navigate(Destination.Editor.route) },
-                onNavigateSettings = { navController.navigate(Destination.Settings.route) }
+                onNavigateSettings = { navController.navigate(Destination.Settings.route) },
+                assetCache = container.assetCache
             )
         }
 
@@ -52,7 +53,8 @@ fun ControlDeckNavHost(
             EditorScreen(
                 profile = currentProfile.value,
                 onProfileChanged = { container.profileRepository.upsertProfile(it) },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                assetCache = container.assetCache
             )
         }
 

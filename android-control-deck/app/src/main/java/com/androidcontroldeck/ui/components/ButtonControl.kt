@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextAlign
@@ -27,7 +29,8 @@ fun ButtonControl(
     colorHex: String?,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: ImageBitmap? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     Card(
@@ -60,12 +63,20 @@ fun ButtonControl(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.titleMedium
             )
-            Icon(
-                imageVector = Icons.Default.Bolt,
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.TopEnd),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f)
-            )
+            if (icon != null) {
+                Image(
+                    bitmap = icon,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.TopEnd)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Bolt,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f)
+                )
+            }
         }
     }
 }

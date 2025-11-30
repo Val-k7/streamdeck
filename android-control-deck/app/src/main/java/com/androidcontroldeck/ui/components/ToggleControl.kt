@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
@@ -27,7 +29,8 @@ fun ToggleControl(
     label: String,
     colorHex: String?,
     onToggle: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    icon: ImageBitmap? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val isOn = remember { mutableStateOf(false) }
@@ -45,11 +48,19 @@ fun ToggleControl(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.PowerSettingsNew,
-                contentDescription = label,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (icon != null) {
+                Image(
+                    bitmap = icon,
+                    contentDescription = label,
+                    modifier = Modifier,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.PowerSettingsNew,
+                    contentDescription = label,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Switch(
                 checked = isOn.value,
                 onCheckedChange = {

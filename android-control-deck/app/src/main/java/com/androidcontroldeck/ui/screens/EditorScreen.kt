@@ -34,16 +34,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.consume
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.dp
 import com.androidcontroldeck.data.model.Control
 import com.androidcontroldeck.data.model.ControlType
 import com.androidcontroldeck.data.model.Profile
+import com.androidcontroldeck.data.storage.AssetCache
 import com.androidcontroldeck.ui.components.ButtonControl
 import com.androidcontroldeck.ui.components.FaderControl
 import com.androidcontroldeck.ui.components.KnobControl
@@ -57,6 +61,7 @@ fun EditorScreen(
     profile: Profile?,
     onProfileChanged: (Profile) -> Unit,
     onNavigateBack: () -> Unit,
+    assetCache: AssetCache,
     modifier: Modifier = Modifier
 ) {
     val editableProfile = remember(profile) { mutableStateOf(profile) }
@@ -127,6 +132,7 @@ fun EditorScreen(
             ) {
                 items(workingProfile.controls, key = { it.id }, span = { GridItemSpan(it.colSpan) }) { control ->
                     val selected = control.id == selectedControlId.value
+                    val iconState = rememberCachedIcon(control.icon, assetCache)
                     Card(
                         modifier = Modifier
                             .animateItemPlacement()
@@ -147,7 +153,7 @@ fun EditorScreen(
                             containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
-                        EditorControlContent(control = control, onChange = { updated ->
+                        EditorControlContent(control = control, icon = iconState.value, onChange = { updated ->
                             updateControl(updated, editableProfile.value!!, onProfileChanged)
                             selectedControlId.value = updated.id
                         })
@@ -190,11 +196,12 @@ private fun updateControl(control: Control, profile: Profile, onProfileChanged: 
 }
 
 @Composable
-private fun EditorControlContent(control: Control, onChange: (Control) -> Unit) {
+private fun EditorControlContent(control: Control, icon: ImageBitmap?, onChange: (Control) -> Unit) {
     when (control.type) {
         ControlType.BUTTON -> ButtonControl(
             label = control.label,
             colorHex = control.colorHex,
+            icon = icon,
             onTap = { onChange(control.copy(label = control.label)) },
             onLongPress = { },
             modifier = Modifier.fillMaxSize()
@@ -203,6 +210,7 @@ private fun EditorControlContent(control: Control, onChange: (Control) -> Unit) 
         ControlType.TOGGLE -> ToggleControl(
             label = control.label,
             colorHex = control.colorHex,
+            icon = icon,
             onToggle = { },
             modifier = Modifier.fillMaxSize()
         )
@@ -232,6 +240,13 @@ private fun EditorControlContent(control: Control, onChange: (Control) -> Unit) 
             onLongPress = { },
             modifier = Modifier.fillMaxSize()
         )
+    }
+}
+
+@Composable
+private fun rememberCachedIcon(name: String?, assetCache: AssetCache): androidx.compose.runtime.State<ImageBitmap?> {
+    return produceState<ImageBitmap?>(initialValue = null, name, assetCache) {
+        value = assetCache.loadIcon(name)
     }
 }
 
