@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.consume
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.androidcontroldeck.data.model.Control
 import com.androidcontroldeck.data.model.ControlType
@@ -148,7 +149,8 @@ fun EditorScreen(
                                         selectedControlId.value = updated.id
                                     }
                                 }
-                            },
+                            }
+                            .testTag("editor_control_${control.id}"),
                         colors = CardDefaults.cardColors(
                             containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -283,7 +285,8 @@ private fun PropertyPanel(control: Control, onChange: (Control) -> Unit) {
                 value = control.colSpan.toFloat(),
                 onValueChange = { onChange(control.copy(colSpan = it.roundToInt().coerceIn(1, 3))) },
                 steps = 2,
-                valueRange = 1f..3f
+                valueRange = 1f..3f,
+                modifier = Modifier.testTag("width_slider")
             )
 
             Text(text = "Hauteur: ${control.rowSpan}")
@@ -291,7 +294,8 @@ private fun PropertyPanel(control: Control, onChange: (Control) -> Unit) {
                 value = control.rowSpan.toFloat(),
                 onValueChange = { onChange(control.copy(rowSpan = it.roundToInt().coerceIn(1, 3))) },
                 steps = 2,
-                valueRange = 1f..3f
+                valueRange = 1f..3f,
+                modifier = Modifier.testTag("height_slider")
             )
         }
     }

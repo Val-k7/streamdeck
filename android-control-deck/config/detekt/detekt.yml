@@ -1,0 +1,63 @@
+build:
+  maxIssues: 0
+  excludeCorrectable: false
+
+config:
+  validation: true
+
+processors:
+  active: true
+
+console-reports:
+  active: true
+
+style:
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2']
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  VariableNaming:
+    active: true
+    ignoreOverridden: true
+    variablePattern: '[a-z][A-Za-z0-9]*'
+    privateVariablePattern: '_?[a-z][A-Za-z0-9]*'
+  FunctionNaming:
+    active: true
+    functionPattern: '([a-z][a-zA-Z0-9]*)|(component\d+|`.*`|@Composable.*)'
+    excludeClassPattern: '.*Test'
+  ClassNaming:
+    active: true
+    classPattern: '[A-Z][a-zA-Z0-9]*'
+  EnumNaming:
+    active: true
+    enumEntryPattern: '([A-Z][A-Za-z0-9]*|_+[A-Z0-9_]*)'
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 60
+  ComplexMethod:
+    active: true
+    threshold: 16
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 8
+  TooManyFunctions:
+    active: true
+    thresholdInClasses: 30
+    thresholdInFiles: 20
+
+naming:
+  MatchingDeclarationName:
+    active: true
+
+performance:
+  SpreadOperator:
+    active: false
+
+potential-bugs:
+  UnsafeCallOnNullableType:
+    active: true
