@@ -1,7 +1,8 @@
 package com.androidcontroldeck.network
 
+import com.androidcontroldeck.logging.NetworkFailure
+import com.androidcontroldeck.logging.UnifiedLogger
 import android.os.SystemClock
-import android.util.Log
 import com.androidcontroldeck.network.model.AckPayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -60,12 +61,15 @@ class WebSocketClient(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
     config: WebSocketConfig = WebSocketConfig(),
     private val networkStatusMonitor: NetworkStatusMonitor? = null,
+    private val logger: UnifiedLogger? = null,
 ) {
     private var webSocket: WebSocket? = null
     private var heartbeatJob: Job? = null
     private var reconnectAttempts = 0
     private val json = Json { ignoreUnknownKeys = true }
-    private val inFlightMessages = mutableMapOf<String, Long>()
+    private data class TimedMessage(val sentAt: Long, val timerId: String? = null)
+
+    private val inFlightMessages = mutableMapOf<String, TimedMessage>()
     private val inFlightMutex = Mutex()
 
     private var okHttpClient: OkHttpClient = okHttpClient
@@ -79,6 +83,9 @@ class WebSocketClient(
 
     private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected())
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
+
+    private val _lastFailure = MutableStateFlow<NetworkFailure?>(null)
+    val lastFailure: StateFlow<NetworkFailure?> = _lastFailure.asStateFlow()
 
     private var lastUrl: String? = null
     private var lastHeaders: Map<String, String> = emptyMap()
@@ -103,9 +110,11 @@ class WebSocketClient(
         lastHeaders = headers
         if (networkStatusMonitor?.isOnline?.value == false) {
             _state.value = ConnectionState.Disconnected("network unavailable")
+            markFailure("network unavailable")
             return
         }
         _state.value = ConnectionState.Connecting(url)
+        logger?.logInfo("Connecting", mapOf("url" to url))
         val requestBuilder = Request.Builder().url(url)
             .header("Sec-WebSocket-Extensions", "permessage-deflate")
         headers.forEach { (key, value) -> requestBuilder.addHeader(key, value) }
@@ -119,6 +128,7 @@ class WebSocketClient(
         webSocket?.close(1000, reason)
         webSocket = null
         _state.value = ConnectionState.Disconnected(reason)
+        logger?.logInfo("Disconnected", mapOf("reason" to (reason ?: "user requested")))
     }
 
     fun updateClient(client: OkHttpClient) {
@@ -169,6 +179,7 @@ class WebSocketClient(
                 reconnectCount = _metrics.value.reconnectCount + 1,
                 lastReconnectDelayMs = delayMs,
             )
+            logger?.logInfo("Reconnecting", mapOf("url" to targetUrl, "delayMs" to delayMs))
             connect(targetUrl, lastHeaders)
         }
     }
@@ -177,31 +188,36 @@ class WebSocketClient(
         override fun onOpen(webSocket: WebSocket, response: Response) {
             reconnectAttempts = 0
             _state.value = ConnectionState.Connected(response.request.url.toString())
+            _lastFailure.value = null
+            logger?.logInfo("WebSocket open", mapOf("url" to response.request.url.toString()))
             startHeartbeat()
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            Log.d("WebSocketClient", "message: $text")
+            logger?.logDebug("message", mapOf("payload" to text))
             runCatching {
                 val ack = json.decodeFromString<AckPayload>(text)
                 if (ack.type == "ack") handleAck(ack)
-            }
+            }.onFailure { logger?.logError("Unable to decode message", it) }
         }
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-            Log.d("WebSocketClient", "message bytes: ${bytes.utf8()}")
+            logger?.logDebug("message bytes", mapOf("payload" to bytes.utf8()))
         }
 
         override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
             _state.value = ConnectionState.Disconnected("closing: $code $reason")
+            logger?.logInfo("Closing", mapOf("code" to code, "reason" to reason))
         }
 
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             _state.value = ConnectionState.Disconnected("closed: $code $reason")
+            logger?.logInfo("Closed", mapOf("code" to code, "reason" to reason))
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
             _state.value = ConnectionState.Disconnected(t.message)
+            markFailure(t.message ?: "unknown failure", t)
             reconnect()
         }
     }
@@ -220,33 +236,60 @@ class WebSocketClient(
     private fun handleAck(ack: AckPayload) {
         scope.launch {
             var latency: Long? = null
+            var timerId: String? = null
             inFlightMutex.withLock {
-                val sentAt = inFlightMessages.remove(ack.messageId)
-                if (sentAt != null) {
-                    latency = SystemClock.elapsedRealtime() - sentAt
+                val message = inFlightMessages.remove(ack.messageId)
+                if (message != null) {
+                    latency = SystemClock.elapsedRealtime() - message.sentAt
+                    timerId = message.timerId
                     _metrics.value = _metrics.value.copy(inFlightMessages = inFlightMessages.size)
                 }
             }
-            latency?.let { updateAckMetrics(it) }
-            _ackEvents.tryEmit(ack)
+            latency?.let {
+                timerId?.let { id ->
+                    logger?.endTimedEvent(
+                        id = id,
+                        name = "control_event",
+                        metadata = mapOf("latencyMs" to it, "messageId" to ack.messageId)
+                    )
+                }
+                updateAckMetrics(it)
+            }
         }
     }
 
     private fun trackInFlight(messageId: String) {
         scope.launch {
+            val timerId = logger?.startTimedEvent(
+                name = "control_event",
+                metadata = mapOf("messageId" to messageId)
+            )
             inFlightMutex.withLock {
-                inFlightMessages[messageId] = SystemClock.elapsedRealtime()
+                inFlightMessages[messageId] = TimedMessage(SystemClock.elapsedRealtime(), timerId)
                 _metrics.value = _metrics.value.copy(inFlightMessages = inFlightMessages.size)
             }
             delay(config.ackTimeoutMs)
             inFlightMutex.withLock {
-                if (inFlightMessages.remove(messageId) != null) {
+                val timed = inFlightMessages.remove(messageId)
+                if (timed != null) {
                     _metrics.value = _metrics.value.copy(
                         droppedAcks = _metrics.value.droppedAcks + 1,
                         inFlightMessages = inFlightMessages.size,
                     )
+                    timed.timerId?.let { timer ->
+                        logger?.endTimedEvent(
+                            id = timer,
+                            name = "control_event",
+                            metadata = mapOf("status" to "timeout", "messageId" to messageId)
+                        )
+                    }
                 }
             }
         }
+    }
+
+    private fun markFailure(reason: String, throwable: Throwable? = null) {
+        _lastFailure.value = NetworkFailure(reason)
+        logger?.logNetworkError(reason, throwable)
     }
 }

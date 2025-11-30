@@ -1,0 +1,14 @@
+{
+  "btn_obs_start": {
+    "action": "keyboard",
+    "payload": "CTRL+SHIFT+S"
+  },
+  "fader_audio": {
+    "action": "audio",
+    "payload": "mic"
+  },
+  "pad_scene": {
+    "action": "obs",
+    "payload": "SwitchScene"
+  }
+}

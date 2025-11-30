@@ -1,9 +1,11 @@
 package com.androidcontroldeck.ui.navigation
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -30,6 +32,7 @@ fun ControlDeckNavHost(
     val currentProfile = container.profileRepository.currentProfile.collectAsState()
     val settingsState = container.preferences.settings.collectAsState(initial = null)
     val storedSecret = container.securePreferences.getHandshakeSecret()
+    val diagnosticsState = container.diagnosticsRepository.diagnostics.collectAsState()
 
     val scope = rememberCoroutineScope()
 
@@ -60,9 +63,11 @@ fun ControlDeckNavHost(
         }
 
         composable(Destination.Settings.route) {
+            val context = LocalContext.current
             SettingsScreen(
                 state = settingsState.value,
                 handshakeSecret = storedSecret,
+                diagnostics = diagnosticsState.value,
                 onSettingsChanged = { updates, secret ->
                     scope.launch {
                         container.preferences.update(updates)
@@ -73,6 +78,15 @@ fun ControlDeckNavHost(
                         if (secret.isBlank()) container.securePreferences.clearHandshakeSecret()
                         container.connectionManager.connect(secret.ifBlank { null })
                     }
+                },
+                onSendLogs = {
+                    val (_, uri) = container.diagnosticsRepository.exportLogArchive()
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/zip"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Envoyer les logs"))
                 },
                 onNavigateBack = { navController.popBackStack() }
             )

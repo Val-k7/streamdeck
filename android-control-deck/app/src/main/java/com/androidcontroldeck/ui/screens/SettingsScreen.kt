@@ -21,15 +21,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.androidcontroldeck.data.preferences.SettingsState
 import com.androidcontroldeck.data.preferences.ThemeMode
+import com.androidcontroldeck.logging.DiagnosticsState
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun SettingsScreen(
     state: SettingsState?,
     handshakeSecret: String?,
+    diagnostics: DiagnosticsState,
     onSettingsChanged: (SettingsState.() -> SettingsState, String) -> Unit,
+    onSendLogs: (android.content.Context) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -38,6 +44,7 @@ fun SettingsScreen(
         return
     }
 
+    val context = LocalContext.current
     val ip = remember(state.serverIp) { mutableStateOf(state.serverIp) }
     val port = remember(state.serverPort) { mutableStateOf(state.serverPort.toString()) }
     val heartbeat = remember(state.heartbeatIntervalMs) { mutableStateOf(state.heartbeatIntervalMs.toFloat()) }
@@ -143,10 +150,44 @@ fun SettingsScreen(
             Text("Enregistrer")
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Diagnostics", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        DiagnosticRow("Version", diagnostics.versionName)
+        DiagnosticRow(
+            label = "Latence moyenne",
+            value = diagnostics.averageLatencyMs?.let { "${it.toInt()} ms" } ?: "Non disponible"
+        )
+        DiagnosticRow(
+            label = "Dernier échec réseau",
+            value = diagnostics.lastNetworkFailure?.let {
+                val formattedDate = DateFormat.getDateTimeInstance().format(Date(it.at))
+                "${it.message} ($formattedDate)"
+            } ?: "Aucun"
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { onSendLogs(context) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Envoyer les logs")
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             "Onboarding rapide : autorisez l'accès réseau local et restez connecté au même Wi-Fi que le serveur pour une latence minimale.",
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Composable
+private fun DiagnosticRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }

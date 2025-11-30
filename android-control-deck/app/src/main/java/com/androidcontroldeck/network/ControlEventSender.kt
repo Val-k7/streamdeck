@@ -4,22 +4,14 @@ import android.os.SystemClock
 import com.androidcontroldeck.data.model.PendingAction
 import com.androidcontroldeck.data.storage.PendingActionStorage
 import com.androidcontroldeck.network.model.ControlPayload
-import com.androidcontroldeck.network.ConnectionState
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import com.androidcontroldeck.logging.UnifiedLogger
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 class ControlEventSender(
     private val webSocketClient: WebSocketClient,
-    private val storage: PendingActionStorage,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val logger: UnifiedLogger? = null,
     private val json: Json = Json { encodeDefaults = true }
 ) {
     private val _pendingActions = MutableStateFlow<List<PendingAction>>(emptyList())
@@ -56,28 +48,11 @@ class ControlEventSender(
             messageId = id,
             sentAt = sentAt,
         )
-        enqueue(PendingAction(payload = payload))
-        flushPending()
-    }
-
-    fun flushPending() {
-        val current = _pendingActions.value
-        current.forEach { pending ->
-            val body = json.encodeToString(pending.payload)
-            webSocketClient.send(body, messageId = pending.payload.messageId)
-        }
-    }
-
-    fun purgePending() {
-        _pendingActions.value = emptyList()
-        storage.clear()
-    }
-
-    private fun enqueue(action: PendingAction) {
-        _pendingActions.update { current ->
-            val updated = current + action
-            storage.save(updated)
-            updated
-        }
+        val body = json.encodeToString(payload)
+        logger?.logDebug(
+            "Sending control event",
+            mapOf("controlId" to controlId, "type" to type, "value" to value, "messageId" to id)
+        )
+        webSocketClient.send(body, messageId = id)
     }
 }
