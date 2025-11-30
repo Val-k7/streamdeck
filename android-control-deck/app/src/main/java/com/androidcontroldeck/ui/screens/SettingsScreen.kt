@@ -31,6 +31,7 @@ fun SettingsScreen(
     handshakeSecret: String?,
     onSettingsChanged: (SettingsState.() -> SettingsState, String) -> Unit,
     onNavigateBack: () -> Unit,
+    onOpenSupport: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (state == null) {
@@ -141,6 +142,11 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Enregistrer")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = onOpenSupport, modifier = Modifier.fillMaxWidth()) {
+            Text("Centre d'aide / Feedback")
         }
 
         Spacer(modifier = Modifier.height(12.dp))

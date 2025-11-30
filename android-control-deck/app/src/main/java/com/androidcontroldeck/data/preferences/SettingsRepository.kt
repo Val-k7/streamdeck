@@ -20,6 +20,7 @@ private val THEME = stringPreferencesKey("theme")
 private val LANGUAGE = stringPreferencesKey("language")
 private val USE_TLS = booleanPreferencesKey("use_tls")
 private val PINNED_CERT = stringPreferencesKey("pinned_cert")
+private val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -31,7 +32,8 @@ data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val language: String = "fr",
     val useTls: Boolean = false,
-    val pinnedCertSha256: String? = null
+    val pinnedCertSha256: String? = null,
+    val onboardingCompleted: Boolean = false,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -44,7 +46,8 @@ class SettingsRepository(private val context: Context) {
             themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
             language = prefs[LANGUAGE] ?: "fr",
             useTls = prefs[USE_TLS] ?: false,
-            pinnedCertSha256 = prefs[PINNED_CERT]
+            pinnedCertSha256 = prefs[PINNED_CERT],
+            onboardingCompleted = prefs[ONBOARDING_DONE] ?: false
         )
     }
 
@@ -61,6 +64,7 @@ class SettingsRepository(private val context: Context) {
             prefs[USE_TLS] = updated.useTls
             updated.pinnedCertSha256?.let { prefs[PINNED_CERT] = it }
                 ?: prefs.remove(PINNED_CERT)
+            prefs[ONBOARDING_DONE] = updated.onboardingCompleted
         }
     }
 
@@ -72,6 +76,7 @@ class SettingsRepository(private val context: Context) {
         themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
         language = prefs[LANGUAGE] ?: "fr",
         useTls = prefs[USE_TLS] ?: false,
-        pinnedCertSha256 = prefs[PINNED_CERT]
+        pinnedCertSha256 = prefs[PINNED_CERT],
+        onboardingCompleted = prefs[ONBOARDING_DONE] ?: false,
     )
 }

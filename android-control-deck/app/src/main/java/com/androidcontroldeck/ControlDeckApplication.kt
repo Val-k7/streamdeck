@@ -6,6 +6,8 @@ import com.androidcontroldeck.data.preferences.SecurePreferences
 import com.androidcontroldeck.data.repository.ProfileRepository
 import com.androidcontroldeck.data.storage.ProfileStorage
 import com.androidcontroldeck.data.storage.AssetCache
+import com.androidcontroldeck.data.diagnostics.DiagnosticsReporter
+import com.androidcontroldeck.data.feedback.FeedbackRepository
 import com.androidcontroldeck.network.AuthRepository
 import com.androidcontroldeck.network.ConnectionManager
 import com.androidcontroldeck.network.ControlEventSender
@@ -34,7 +36,7 @@ class AppContainer(private val application: Application) {
 
     val securePreferences by lazy { SecurePreferences(application) }
     private val settingsRepository by lazy { SettingsRepository(application) }
-    private val networkMonitor by lazy { NetworkStatusMonitor(application, appScope) }
+    val networkMonitor by lazy { NetworkStatusMonitor(application, appScope) }
     private val authRepository by lazy { AuthRepository(securePreferences) }
     private val webSocketClient by lazy {
         WebSocketClient(
@@ -45,4 +47,14 @@ class AppContainer(private val application: Application) {
     val connectionManager by lazy { ConnectionManager(settingsRepository, webSocketClient, authRepository, appScope) }
     val controlEventSender by lazy { ControlEventSender(webSocketClient) }
     val preferences by lazy { settingsRepository }
+
+    val diagnosticsReporter by lazy {
+        DiagnosticsReporter(
+            settingsRepository = settingsRepository,
+            securePreferences = securePreferences,
+            networkStatusMonitor = networkMonitor,
+            connectionManager = connectionManager
+        )
+    }
+    val feedbackRepository by lazy { FeedbackRepository() }
 }
