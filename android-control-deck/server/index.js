@@ -1,6 +1,6 @@
 import express from 'express'
 import rateLimit from 'express-rate-limit'
-import { WebSocketServer } from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import fs from 'fs'
 import path from 'path'
 import http from 'http'
@@ -18,21 +18,56 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const app = express()
-const port = process.env.PORT || 4455
-const defaultToken = process.env.DECK_TOKEN || 'change-me'
-const handshakeSecret = process.env.HANDSHAKE_SECRET || defaultToken
-const tlsKey = process.env.TLS_KEY_PATH
-const tlsCert = process.env.TLS_CERT_PATH
+const runtimeBase = process.env.DECK_DATA_DIR
+  ? path.resolve(process.env.DECK_DATA_DIR)
+  : process.pkg
+    ? path.dirname(process.execPath)
+    : __dirname
+const templateBase = __dirname
+const configDir = path.join(runtimeBase, 'config')
+const profilesDir = path.join(runtimeBase, 'profiles')
+const logsDir = path.join(runtimeBase, 'logs')
 
-const logsDir = path.join(__dirname, 'logs')
+fs.mkdirSync(configDir, { recursive: true })
+fs.mkdirSync(profilesDir, { recursive: true })
 fs.mkdirSync(logsDir, { recursive: true })
 
+function readJsonSafe(filePath, fallback = {}) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+  } catch (e) {
+    console.warn('Unable to parse JSON file', { file: filePath, error: e.message })
+    return fallback
+  }
+}
+
+function ensureSeedFile(seedPath, targetPath) {
+  if (!fs.existsSync(seedPath)) return
+  if (fs.existsSync(targetPath)) return
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+  fs.copyFileSync(seedPath, targetPath)
+}
+
+const configPath = path.join(configDir, 'server.config.json')
+const configSeedPath = path.join(templateBase, 'config', 'server.config.sample.json')
+ensureSeedFile(configSeedPath, configPath)
+const config = fs.existsSync(configPath) ? readJsonSafe(configPath, {}) : {}
+
+const port = Number(process.env.PORT) || config.port || 4455
+const defaultToken = process.env.DECK_TOKEN || config.defaultToken || 'change-me'
+const handshakeSecret = process.env.HANDSHAKE_SECRET || config.handshakeSecret || defaultToken
+const tlsKey = process.env.TLS_KEY_PATH
+const tlsCert = process.env.TLS_CERT_PATH
+const logLevel = process.env.LOG_LEVEL || 'info'
+const serverStartedAt = Date.now()
+
+const app = express()
+
 const logger = winston.createLogger({
-  level: 'info',
+  level: logLevel,
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console({ level: 'info' }),
+    new winston.transports.Console({ level: logLevel }),
     new DailyRotateFile({
       dirname: logsDir,
       filename: 'security-%DATE%.log',
@@ -40,7 +75,7 @@ const logger = winston.createLogger({
       zippedArchive: true,
       maxFiles: '14d',
       maxSize: '5m',
-      level: 'info',
+      level: logLevel,
     }),
   ],
 })
@@ -51,6 +86,7 @@ const controlPayloadSchema = {
   additionalProperties: false,
   required: ['controlId', 'type', 'value', 'messageId', 'sentAt'],
   properties: {
+    kind: { type: 'string', const: 'control', default: 'control' },
     controlId: { type: 'string', minLength: 1 },
     type: { type: 'string', minLength: 1 },
     value: { type: 'number' },
@@ -65,15 +101,27 @@ const controlPayloadSchema = {
 }
 const validateControlPayload = ajv.compile(controlPayloadSchema)
 
-const mappingsPath = path.join(__dirname, 'config', 'mappings.json')
-const mappings = fs.existsSync(mappingsPath)
-  ? JSON.parse(fs.readFileSync(mappingsPath, 'utf-8'))
-  : {}
+const mappingSeedSource = path.join(templateBase, 'config', 'mappings', 'default.json')
+const mappingSeedTarget = path.join(configDir, 'mappings', 'default.json')
+ensureSeedFile(mappingSeedSource, mappingSeedTarget)
 
-const profilesDir = path.join(__dirname, 'profiles')
-fs.mkdirSync(profilesDir, { recursive: true })
+function resolveConfigPath(value) {
+  if (!value) return null
+  return path.isAbsolute(value) ? value : path.join(configDir, value)
+}
 
-const tokensPath = path.join(__dirname, 'config', 'tokens.json')
+const mappingCandidates = [process.env.MAPPINGS_FILE, config.mappingsFile, 'mappings/default.json', 'mappings.json']
+const resolvedMappingsPath = mappingCandidates
+  .map(resolveConfigPath)
+  .filter(Boolean)
+  .find((candidate) => fs.existsSync(candidate))
+const mappingsPath = resolvedMappingsPath ?? resolveConfigPath(config.mappingsFile ?? 'mappings/default.json')
+const mappings = fs.existsSync(mappingsPath) ? readJsonSafe(mappingsPath, {}) : {}
+if (!fs.existsSync(mappingsPath)) {
+  logger.warn('Mapping file not found, using empty configuration', { mappingsPath })
+}
+
+const tokensPath = path.join(configDir, 'tokens.json')
 const activeTokens = new Set([defaultToken])
 function loadTokens() {
   if (fs.existsSync(tokensPath)) {
@@ -139,8 +187,7 @@ app.post('/handshake/revoke', (req, res) => {
 })
 
 app.get('/profiles', (_, res) => {
-  const files = fs.readdirSync(profilesDir).filter((file) => file.endsWith('.json'))
-  res.json({ profiles: files })
+  res.json({ profiles: getProfileSummary() })
 })
 
 app.get('/profiles/:id', (req, res) => {
@@ -149,9 +196,11 @@ app.get('/profiles/:id', (req, res) => {
   res.type('json').send(fs.readFileSync(file, 'utf-8'))
 })
 
-const profileSchemaPath = path.join(__dirname, 'config', 'profile.schema.json')
-const profileValidator = fs.existsSync(profileSchemaPath)
-  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaPath, 'utf-8')))
+const profileSchemaCandidate = fs.existsSync(path.join(configDir, 'profile.schema.json'))
+  ? path.join(configDir, 'profile.schema.json')
+  : path.join(templateBase, 'config', 'profile.schema.json')
+const profileValidator = fs.existsSync(profileSchemaCandidate)
+  ? ajv.compile(JSON.parse(fs.readFileSync(profileSchemaCandidate, 'utf-8')))
   : null
 
 app.post('/profiles/:id', (req, res) => {
@@ -164,12 +213,24 @@ app.post('/profiles/:id', (req, res) => {
     return res.status(400).json({ error: 'invalid profile', details: profileValidator.errors })
   }
 
-  const payload = JSON.stringify(req.body, null, 2)
-  fs.writeFileSync(path.join(profilesDir, `${req.params.id}.json`), payload)
-  res.json({ status: 'saved' })
+  if (req.body.id !== req.params.id) {
+    logger.warn('Profile validation failed: id mismatch', { requested: req.params.id, provided: req.body.id })
+    return res.status(400).json({ error: 'id mismatch' })
+  }
+
+  const { profile, conflict, previousVersion } = saveProfile(req.body, { source: 'http' })
+  res.json({
+    status: 'saved',
+    version: profile.version,
+    checksum: profile.checksum,
+    conflict,
+    previousVersion,
+  })
 })
 
 let server
+let wss
+let totalConnections = 0
 if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   const credentials = {
     key: fs.readFileSync(tlsKey),
@@ -186,7 +247,7 @@ if (tlsKey && tlsCert && fs.existsSync(tlsKey) && fs.existsSync(tlsCert)) {
   })
 }
 
-const wss = new WebSocketServer({
+wss = new WebSocketServer({
   server,
   path: '/ws',
   perMessageDeflate: {
@@ -194,6 +255,16 @@ const wss = new WebSocketServer({
     clientNoContextTakeover: true,
     threshold: 512,
   },
+})
+
+app.get('/diagnostics', (req, res) => {
+  res.json({
+    status: 'ok',
+    logLevel: logger.level,
+    uptimeSeconds: Math.round((Date.now() - serverStartedAt) / 1000),
+    activeWebsocketConnections: wss?.clients?.size ?? 0,
+    totalConnections,
+  })
 })
 
 wss.on('connection', (ws, req) => {
@@ -208,6 +279,7 @@ wss.on('connection', (ws, req) => {
   }
 
   logger.info('Client connected', { ip: req.socket.remoteAddress })
+  totalConnections += 1
 
   const recentMessages = []
 
@@ -237,18 +309,118 @@ wss.on('connection', (ws, req) => {
       return
     }
 
-    if (!validateControlPayload(payload)) {
-      logger.warn('Payload rejected by schema', { errors: validateControlPayload.errors })
+    const kind = payload.kind || 'control'
+    const session = clientSessions.get(ws)
+
+    if (kind === 'control') {
+      if (!validateControlPayload(payload)) {
+        logger.warn('Payload rejected by schema', { errors: validateControlPayload.errors })
+        ws.send(
+          JSON.stringify({
+            type: 'ack',
+            status: 'error',
+            error: 'invalid payload',
+            receivedAt,
+          })
+        )
+        return
+      }
+
+      const ack = {
+        type: 'ack',
+        messageId: payload.messageId,
+        controlId: payload.controlId,
+        receivedAt,
+      }
+
+      const mapping = payload.controlId ? mappings[payload.controlId] : undefined
+      if (session) {
+        session.controlStates[payload.controlId] = payload.value
+      }
+
+      if (!mapping) {
+        ws.send(JSON.stringify({ ...ack, status: 'ignored' }))
+        return
+      }
+
+      try {
+        switch (mapping.action) {
+          case 'keyboard':
+            await handleKeyboard(mapping.payload)
+            break
+          case 'obs':
+            await handleObs(mapping.payload)
+            break
+          case 'script':
+            await handleScript(mapping.payload)
+            break
+          case 'audio':
+            await handleAudio(mapping.payload)
+            break
+          default:
+            console.warn('Unknown action', mapping.action)
+        }
+        ws.send(JSON.stringify({ ...ack, status: 'ok', processedAt: Date.now() }))
+      } catch (e) {
+        console.error('Unable to execute action', e)
+        logger.error('Action execution error', { error: e.message })
+        ws.send(
+          JSON.stringify({
+            ...ack,
+            status: 'error',
+            processedAt: Date.now(),
+            error: e?.message ?? 'unknown error',
+          })
+        )
+      }
+      return
+    }
+
+    if (kind === 'profile:select') {
+      if (!validateProfileSelectPayload(payload)) {
+        logger.warn('Profile selection rejected by schema', { errors: validateProfileSelectPayload.errors })
+        ws.send(JSON.stringify({ type: 'profile:select:ack', status: 'error', error: 'invalid payload', receivedAt }))
+        return
+      }
+
+      const profileData = loadProfileFromDisk(payload.profileId)
+      if (!profileData) {
+        ws.send(
+          JSON.stringify({
+            type: 'profile:select:ack',
+            status: 'error',
+            error: 'profile not found',
+            receivedAt,
+            profileId: payload.profileId,
+          })
+        )
+        return
+      }
+
+      if (session) {
+        session.activeProfileId = payload.profileId
+        if (payload.resetState !== false) {
+          session.controlStates = {}
+        }
+      }
+
       ws.send(
         JSON.stringify({
-          type: 'ack',
-          status: 'error',
-          error: 'invalid payload',
+          type: 'profile:select:ack',
+          status: 'ok',
+          profileId: payload.profileId,
           receivedAt,
+          profile: profileData.profile,
         })
       )
       return
     }
+
+    logger.debug('Control payload received', {
+      controlId: payload.controlId,
+      type: payload.type,
+      meta: payload.meta,
+    })
 
     const ack = {
       type: 'ack',
@@ -257,43 +429,45 @@ wss.on('connection', (ws, req) => {
       receivedAt,
     }
 
-    const mapping = payload.controlId ? mappings[payload.controlId] : undefined
-    if (!mapping) {
-      ws.send(JSON.stringify({ ...ack, status: 'ignored' }))
+      if (!profileValidator) {
+        ws.send(JSON.stringify({ type: 'profile:update:ack', status: 'error', error: 'profile validator unavailable' }))
+        return
+      }
+
+      if (!profileValidator(payload.profile)) {
+        ws.send(
+          JSON.stringify({
+            type: 'profile:update:ack',
+            status: 'error',
+            error: 'invalid profile',
+            details: profileValidator.errors,
+          })
+        )
+        return
+      }
+
+      const { profile: saved, conflict, previousVersion } = saveProfile(payload.profile, {
+        source: 'websocket',
+        actor: session?.clientId ?? 'ws',
+      })
+
+      ws.send(
+        JSON.stringify({
+          type: 'profile:update:ack',
+          status: 'ok',
+          profileId: saved.id,
+          version: saved.version,
+          conflict,
+          previousVersion,
+          receivedAt,
+        })
+      )
       return
     }
 
-    try {
-      switch (mapping.action) {
-        case 'keyboard':
-          await handleKeyboard(mapping.payload)
-          break
-        case 'obs':
-          await handleObs(mapping.payload)
-          break
-        case 'script':
-          await handleScript(mapping.payload)
-          break
-        case 'audio':
-          await handleAudio(mapping.payload)
-          break
-        default:
-          console.warn('Unknown action', mapping.action)
-      }
-      ws.send(JSON.stringify({ ...ack, status: 'ok', processedAt: Date.now() }))
-    } catch (e) {
-      console.error('Unable to execute action', e)
-      logger.error('Action execution error', { error: e.message })
-      ws.send(
-        JSON.stringify({
-          ...ack,
-          status: 'error',
-          processedAt: Date.now(),
-          error: e?.message ?? 'unknown error',
-        })
-      )
-    }
+    ws.send(JSON.stringify({ type: 'error', error: 'unknown message kind', kind }))
   })
 
-  ws.on('close', () => console.log('Client disconnected'))
+  ws.on('close', () => logger.info('Client disconnected', { ip: req.socket.remoteAddress }))
+  ws.on('error', (error) => logger.error('Websocket error', { error: error.message }))
 })

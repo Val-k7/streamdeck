@@ -28,12 +28,14 @@ import androidx.compose.ui.draw.background
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.androidcontroldeck.data.model.Control
 import com.androidcontroldeck.data.model.ControlType
 import com.androidcontroldeck.data.model.Profile
 import com.androidcontroldeck.data.storage.AssetCache
+import com.androidcontroldeck.R
 import com.androidcontroldeck.ui.components.ButtonControl
 import com.androidcontroldeck.ui.components.FaderControl
 import com.androidcontroldeck.ui.components.KnobControl
@@ -57,7 +59,7 @@ fun ProfileScreen(
 ) {
     if (profile == null) {
         Text(
-            text = "Chargement du profil...",
+            text = stringResource(R.string.profile_loading),
             modifier = modifier,
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center

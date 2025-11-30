@@ -20,8 +20,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.androidcontroldeck.R
 
 @Composable
 fun ButtonControl(
@@ -58,7 +60,7 @@ fun ButtonControl(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = label.ifBlank { "Button" },
+                text = label.ifBlank { stringResource(R.string.control_button_fallback) },
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 style = MaterialTheme.typography.titleMedium

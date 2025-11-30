@@ -18,6 +18,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.example.controldeck.model.AccessibilityPreferences
 import com.example.controldeck.ui.components.accessibleControl
+import androidx.compose.ui.res.stringResource
+import com.androidcontroldeck.R
 
 @Composable
 fun SettingsScreen(
@@ -32,28 +34,28 @@ fun SettingsScreen(
             .padding(contentPadding)
     ) {
         Text(
-            text = "Accessibilité",
+            text = stringResource(R.string.settings_accessibility_title),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(modifier = Modifier.height(16.dp))
         SettingToggle(
-            title = "Animations réduites",
-            description = "Limiter les mouvements et transitions pour réduire l'inconfort.",
+            title = stringResource(R.string.settings_reduce_motion_title),
+            description = stringResource(R.string.settings_reduce_motion_description),
             checked = preferences.reduceMotion,
             onCheckedChange = { onPreferencesChanged(preferences.copy(reduceMotion = it)) }
         )
         VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
         SettingToggle(
-            title = "Retour haptique",
-            description = "Activer ou couper les vibrations des contrôles.",
+            title = stringResource(R.string.settings_haptics_title),
+            description = stringResource(R.string.settings_haptics_description),
             checked = preferences.hapticsEnabled,
             onCheckedChange = { onPreferencesChanged(preferences.copy(hapticsEnabled = it)) }
         )
         VerticalDivider(modifier = Modifier.padding(vertical = 8.dp))
         SettingToggle(
-            title = "Police agrandie",
-            description = "Augmenter la taille des textes pour une meilleure lisibilité.",
+            title = stringResource(R.string.settings_large_text_title),
+            description = stringResource(R.string.settings_large_text_description),
             checked = preferences.largeTextEnabled,
             onCheckedChange = { onPreferencesChanged(preferences.copy(largeTextEnabled = it)) }
         )
@@ -77,7 +79,11 @@ private fun SettingToggle(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = Modifier.accessibleControl(
-                label = "$title: ${'$'}{if (checked) "activé" else "désactivé"}",
+                label = stringResource(
+                    R.string.settings_toggle_label_format,
+                    title,
+                    stringResource(if (checked) R.string.settings_toggle_state_on else R.string.settings_toggle_state_off)
+                ),
                 onClick = { onCheckedChange(!checked) },
                 role = Role.Switch
             ),

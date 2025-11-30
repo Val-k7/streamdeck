@@ -1,5 +1,6 @@
 package com.androidcontroldeck.data.repository
 
+import com.androidcontroldeck.R
 import com.androidcontroldeck.data.model.Action
 import com.androidcontroldeck.data.model.ActionType
 import com.androidcontroldeck.data.model.Control
@@ -18,7 +19,8 @@ import kotlinx.coroutines.launch
 class ProfileRepository(
     private val storage: ProfileStorage,
     private val serializer: ProfileSerializer = ProfileSerializer(),
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+    private val stringProvider: (Int) -> String
 ) {
     private val _profiles = MutableStateFlow<List<Profile>>(emptyList())
     val profiles: StateFlow<List<Profile>> = _profiles.asStateFlow()
@@ -111,7 +113,7 @@ class ProfileRepository(
                 type = ControlType.BUTTON,
                 row = 0,
                 col = 0,
-                label = "Start Stream",
+                label = stringProvider(R.string.default_control_start_stream),
                 colorHex = "#FF5722",
                 icon = null,
                 action = Action(type = ActionType.OBS, payload = "StartStreaming")
@@ -121,7 +123,7 @@ class ProfileRepository(
                 type = ControlType.FADER,
                 row = 1,
                 col = 0,
-                label = "Mic/Aux",
+                label = stringProvider(R.string.default_control_mic_aux),
                 minValue = 0f,
                 maxValue = 100f,
                 action = Action(type = ActionType.AUDIO, payload = "mic")
@@ -133,14 +135,14 @@ class ProfileRepository(
                 col = 1,
                 rowSpan = 2,
                 colSpan = 2,
-                label = "Scene",
+                label = stringProvider(R.string.default_control_scene),
                 colorHex = "#03A9F4",
                 action = Action(type = ActionType.OBS, payload = "SwitchScene")
             )
         )
         val baseProfile = Profile(
             id = "default_profile",
-            name = "My Deck",
+            name = stringProvider(R.string.default_profile_name),
             rows = 3,
             cols = 5,
             controls = controls,

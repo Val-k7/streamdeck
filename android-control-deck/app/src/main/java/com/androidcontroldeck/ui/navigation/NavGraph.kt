@@ -1,15 +1,17 @@
 package com.androidcontroldeck.ui.navigation
 
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.androidcontroldeck.AppContainer
-import com.androidcontroldeck.data.feedback.FeedbackReport
+import com.androidcontroldeck.localization.applyAppLocale
 import com.androidcontroldeck.ui.screens.EditorScreen
 import com.androidcontroldeck.ui.screens.ProfileScreen
 import com.androidcontroldeck.ui.screens.SettingsScreen
@@ -36,8 +38,13 @@ fun ControlDeckNavHost(
     val isOnline = container.networkMonitor.isOnline.collectAsState(initial = false)
     val isSocketConnected = container.connectionManager.isConnected.collectAsState(initial = false)
     val storedSecret = container.securePreferences.getHandshakeSecret()
+    val diagnosticsState = container.diagnosticsRepository.diagnostics.collectAsState()
 
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(settingsState.value?.language) {
+        settingsState.value?.language?.let { applyAppLocale(it) }
+    }
 
     NavHost(
         navController = navController,
@@ -73,9 +80,11 @@ fun ControlDeckNavHost(
         }
 
         composable(Destination.Settings.route) {
+            val context = LocalContext.current
             SettingsScreen(
                 state = settingsState.value,
                 handshakeSecret = storedSecret,
+                diagnostics = diagnosticsState.value,
                 onSettingsChanged = { updates, secret ->
                     scope.launch {
                         container.preferences.update(updates)
@@ -87,30 +96,16 @@ fun ControlDeckNavHost(
                         container.connectionManager.connect(secret.ifBlank { null })
                     }
                 },
-                onNavigateBack = { navController.popBackStack() },
-                onOpenSupport = { navController.navigate(Destination.Support.route) }
-            )
-        }
-
-        composable(Destination.Support.route) {
-            SupportScreen(
-                isOnline = isOnline.value,
-                isSocketConnected = isSocketConnected.value,
-                onNavigateBack = { navController.popBackStack() },
-                onSubmitFeedback = { rating, comment, includeLogs ->
-                    scope.launch {
-                        val diagnostics = container.diagnosticsReporter.collect(includeLogs)
-                        container.feedbackRepository.submit(
-                            FeedbackReport(
-                                rating = rating,
-                                comment = comment,
-                                includeLogs = includeLogs,
-                                diagnostics = diagnostics.summary,
-                            )
-                        )
-                        snackbarHostState.showSnackbar("Merci pour votre retour")
+                onSendLogs = {
+                    val (_, uri) = container.diagnosticsRepository.exportLogArchive()
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "application/zip"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     }
-                }
+                    context.startActivity(Intent.createChooser(intent, "Envoyer les logs"))
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
