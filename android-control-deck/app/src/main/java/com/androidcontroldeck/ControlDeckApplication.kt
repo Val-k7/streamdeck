@@ -32,7 +32,7 @@ class AppContainer(private val application: Application) {
 
     val assetCache by lazy { AssetCache(application) }
     private val profileStorage by lazy { ProfileStorage(application) }
-    val profileRepository by lazy { ProfileRepository(profileStorage, scope = appScope) }
+    val profileRepository by lazy { ProfileRepository(profileStorage, scope = appScope, stringProvider = application::getString) }
 
     val securePreferences by lazy { SecurePreferences(application) }
     private val settingsRepository by lazy { SettingsRepository(application) }

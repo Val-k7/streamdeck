@@ -3,6 +3,7 @@ package com.androidcontroldeck.ui.navigation
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -11,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.androidcontroldeck.AppContainer
+import com.androidcontroldeck.localization.applyAppLocale
 import com.androidcontroldeck.ui.screens.EditorScreen
 import com.androidcontroldeck.ui.screens.ProfileScreen
 import com.androidcontroldeck.ui.screens.SettingsScreen
@@ -35,6 +37,10 @@ fun ControlDeckNavHost(
     val diagnosticsState = container.diagnosticsRepository.diagnostics.collectAsState()
 
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(settingsState.value?.language) {
+        settingsState.value?.language?.let { applyAppLocale(it) }
+    }
 
     NavHost(
         navController = navController,

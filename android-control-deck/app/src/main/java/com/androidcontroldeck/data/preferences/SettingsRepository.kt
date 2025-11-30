@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.androidcontroldeck.localization.allLanguageTags
+import com.androidcontroldeck.localization.defaultLanguageTag
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -29,7 +31,7 @@ data class SettingsState(
     val heartbeatIntervalMs: Int = 5_000,
     val latencyMs: Int = 16,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val language: String = "fr",
+    val language: String = defaultLanguageTag(),
     val useTls: Boolean = false,
     val pinnedCertSha256: String? = null
 )
@@ -42,7 +44,7 @@ class SettingsRepository(private val context: Context) {
             heartbeatIntervalMs = prefs[HEARTBEAT_INTERVAL] ?: 5_000,
             latencyMs = prefs[LATENCY] ?: 16,
             themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
-            language = prefs[LANGUAGE] ?: "fr",
+            language = prefs[LANGUAGE]?.takeIf { it in allLanguageTags } ?: defaultLanguageTag(),
             useTls = prefs[USE_TLS] ?: false,
             pinnedCertSha256 = prefs[PINNED_CERT]
         )
@@ -70,7 +72,7 @@ class SettingsRepository(private val context: Context) {
         heartbeatIntervalMs = prefs[HEARTBEAT_INTERVAL] ?: 5_000,
         latencyMs = prefs[LATENCY] ?: 16,
         themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
-        language = prefs[LANGUAGE] ?: "fr",
+        language = prefs[LANGUAGE]?.takeIf { it in allLanguageTags } ?: defaultLanguageTag(),
         useTls = prefs[USE_TLS] ?: false,
         pinnedCertSha256 = prefs[PINNED_CERT]
     )

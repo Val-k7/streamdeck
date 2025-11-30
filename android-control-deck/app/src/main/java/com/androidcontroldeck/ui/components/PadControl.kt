@@ -15,8 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.androidcontroldeck.R
 
 @Composable
 fun PadControl(
@@ -46,7 +48,7 @@ fun PadControl(
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = label.ifBlank { "Pad" },
+            text = label.ifBlank { stringResource(R.string.control_pad_fallback) },
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onPrimary,
             style = MaterialTheme.typography.titleMedium

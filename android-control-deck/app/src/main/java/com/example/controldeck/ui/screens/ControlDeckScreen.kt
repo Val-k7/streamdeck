@@ -23,10 +23,12 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.controldeck.ui.components.AccessibleButton
 import com.example.controldeck.ui.components.AccessiblePad
 import com.example.controldeck.ui.components.AccessibleSlider
+import com.androidcontroldeck.R
 
 @Composable
 fun ControlDeckScreen(
@@ -43,15 +45,15 @@ fun ControlDeckScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier.padding(16.dp)
     ) {
-        Text(text = "Deck accessible", style = MaterialTheme.typography.headlineSmall)
+        Text(text = stringResource(R.string.accessible_deck_title), style = MaterialTheme.typography.headlineSmall)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             AccessibleButton(
-                label = "Démarrer",
+                label = stringResource(R.string.accessible_start),
                 onClick = onPrimaryAction,
                 modifier = Modifier
                     .focusRequester(focusRequesterButton)
                     .focusOrder(focusRequesterButton) { down = focusRequesterSlider }
-                    .semantics { stateDescription = "Bouton principal" }
+                    .semantics { stateDescription = stringResource(R.string.accessible_primary_button_desc) }
                     .onKeyEvent {
                         if (it.key == Key.DirectionCenter) {
                             onPrimaryAction(); true
@@ -59,18 +61,18 @@ fun ControlDeckScreen(
                     }
             )
             AccessibleButton(
-                label = "Arrêter",
+                label = stringResource(R.string.accessible_stop),
                 onClick = onSecondaryAction,
                 modifier = Modifier
                     .focusRequester(focusRequesterPad)
                     .focusOrder(focusRequesterPad) { right = focusRequesterSlider }
-                    .semantics { stateDescription = "Bouton secondaire" }
+                    .semantics { stateDescription = stringResource(R.string.accessible_secondary_button_desc) }
             )
         }
         AccessibleSlider(
             value = sliderValue.floatValue,
             onValueChange = { sliderValue.floatValue = it },
-            label = "Volume",
+            label = stringResource(R.string.accessible_volume),
             modifier = Modifier
                 .focusRequester(focusRequesterSlider)
                 .focusOrder(focusRequesterSlider) { up = focusRequesterButton; left = focusRequesterPad }
@@ -92,21 +94,21 @@ fun ControlDeckScreen(
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .semantics { stateDescription = "Pad de scène" }
+                .semantics { stateDescription = stringResource(R.string.accessible_scene_pad_desc) }
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(12.dp)
             ) {
                 AccessiblePad(
-                    title = "Scène 1",
-                    description = "Caméra + micro",
+                    title = stringResource(R.string.accessible_scene_one_title),
+                    description = stringResource(R.string.accessible_scene_one_desc),
                     onTap = onPrimaryAction,
                     modifier = Modifier.size(width = 140.dp, height = 120.dp)
                 )
                 AccessiblePad(
-                    title = "Scène 2",
-                    description = "Capture d'écran",
+                    title = stringResource(R.string.accessible_scene_two_title),
+                    description = stringResource(R.string.accessible_scene_two_desc),
                     onTap = onSecondaryAction,
                     modifier = Modifier.size(width = 140.dp, height = 120.dp)
                 )
@@ -114,7 +116,7 @@ fun ControlDeckScreen(
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = "Chaque contrôle possède un label, un rôle TalkBack/VoiceOver et accepte la navigation clavier/d-pad.",
+            text = stringResource(R.string.accessible_controls_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = Color.Gray
         )

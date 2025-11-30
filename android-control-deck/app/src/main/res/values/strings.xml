@@ -1,3 +1,79 @@
 <resources>
     <string name="app_name">Android Control Deck</string>
+    <string name="control_deck_title">Android Control Deck</string>
+    <string name="control_deck_action_editor">Editor</string>
+    <string name="control_deck_action_settings">Settings</string>
+
+    <string name="settings_loading">Loading settings…</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_server_ip_label">Server IP address</string>
+    <string name="settings_port_label">Port</string>
+    <string name="settings_heartbeat_label">Heartbeat interval: %1$d ms</string>
+    <string name="settings_latency_label">Target latency: %1$d ms</string>
+    <string name="settings_theme_label">Theme: %1$s</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_language_label">Language: %1$s</string>
+    <string name="settings_language_follow_system">Follow system</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_fr">French</string>
+    <string name="settings_tls_label">Enable TLS</string>
+    <string name="settings_pinned_cert_label">SHA-256 fingerprint to pin (optional)</string>
+    <string name="settings_handshake_secret_label">Handshake secret</string>
+    <string name="settings_save">Save</string>
+    <string name="settings_onboarding_note">Quick onboarding: allow local network access and stay on the same Wi-Fi as the server for minimal latency.</string>
+
+    <string name="profile_loading">Loading profile…</string>
+
+    <string name="editor_no_profile">No profile to edit</string>
+    <string name="editor_title">Layout editor</string>
+    <string name="editor_back">Back</string>
+    <string name="editor_duplicate">Duplicate</string>
+    <string name="editor_delete">Delete</string>
+    <string name="editor_new_control">New</string>
+    <string name="editor_add">Add</string>
+    <string name="editor_properties">Properties</string>
+    <string name="editor_label">Label</string>
+    <string name="editor_type_button">Button</string>
+    <string name="editor_type_toggle">Toggle</string>
+    <string name="editor_type_fader">Fader</string>
+    <string name="editor_type_knob">Knob</string>
+    <string name="editor_type_pad">Pad</string>
+    <string name="editor_width">Width: %1$d</string>
+    <string name="editor_height">Height: %1$d</string>
+
+    <string name="accessible_deck_title">Accessible deck</string>
+    <string name="accessible_start">Start</string>
+    <string name="accessible_stop">Stop</string>
+    <string name="accessible_primary_button_desc">Primary button</string>
+    <string name="accessible_secondary_button_desc">Secondary button</string>
+    <string name="accessible_volume">Volume</string>
+    <string name="accessible_scene_pad_desc">Scene pad</string>
+    <string name="accessible_scene_one_title">Scene 1</string>
+    <string name="accessible_scene_one_desc">Camera + mic</string>
+    <string name="accessible_scene_two_title">Scene 2</string>
+    <string name="accessible_scene_two_desc">Screen capture</string>
+    <string name="accessible_controls_hint">Each control has a label, a TalkBack/VoiceOver role, and supports keyboard or d-pad navigation.</string>
+
+    <string name="settings_accessibility_title">Accessibility</string>
+    <string name="settings_reduce_motion_title">Reduced animations</string>
+    <string name="settings_reduce_motion_description">Limit motion and transitions to reduce discomfort.</string>
+    <string name="settings_haptics_title">Haptic feedback</string>
+    <string name="settings_haptics_description">Enable or mute control vibrations.</string>
+    <string name="settings_large_text_title">Larger text</string>
+    <string name="settings_large_text_description">Increase text size for better readability.</string>
+    <string name="settings_toggle_label_format">%1$s: %2$s</string>
+    <string name="settings_toggle_state_on">on</string>
+    <string name="settings_toggle_state_off">off</string>
+
+    <string name="control_button_fallback">Button</string>
+    <string name="control_pad_fallback">Pad</string>
+
+    <string name="default_control_start_stream">Start Stream</string>
+    <string name="default_control_mic_aux">Mic/Aux</string>
+    <string name="default_control_scene">Scene</string>
+    <string name="default_profile_name">My Deck</string>
+
+    <string name="settings_language_option_content_description">Select %1$s</string>
 </resources>
