@@ -6,6 +6,7 @@ import com.androidcontroldeck.data.preferences.SecurePreferences
 import com.androidcontroldeck.data.repository.ProfileRepository
 import com.androidcontroldeck.data.storage.ProfileStorage
 import com.androidcontroldeck.data.storage.AssetCache
+import com.androidcontroldeck.data.storage.PendingActionStorage
 import com.androidcontroldeck.network.AuthRepository
 import com.androidcontroldeck.network.ConnectionManager
 import com.androidcontroldeck.network.ControlEventSender
@@ -36,6 +37,7 @@ class AppContainer(private val application: Application) {
     private val settingsRepository by lazy { SettingsRepository(application) }
     private val networkMonitor by lazy { NetworkStatusMonitor(application, appScope) }
     private val authRepository by lazy { AuthRepository(securePreferences) }
+    private val pendingActionStorage by lazy { PendingActionStorage(application) }
     private val webSocketClient by lazy {
         WebSocketClient(
             scope = appScope,
@@ -43,6 +45,6 @@ class AppContainer(private val application: Application) {
         )
     }
     val connectionManager by lazy { ConnectionManager(settingsRepository, webSocketClient, authRepository, appScope) }
-    val controlEventSender by lazy { ControlEventSender(webSocketClient) }
+    val controlEventSender by lazy { ControlEventSender(webSocketClient, pendingActionStorage, appScope) }
     val preferences by lazy { settingsRepository }
 }

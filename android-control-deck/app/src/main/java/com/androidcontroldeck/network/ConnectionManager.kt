@@ -26,6 +26,7 @@ class ConnectionManager(
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+    val state: StateFlow<ConnectionState> = webSocketClient.state
 
     init {
         scope.launch {
