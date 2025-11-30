@@ -41,6 +41,7 @@ fun SettingsScreen(
     onSettingsChanged: (SettingsState.() -> SettingsState, String) -> Unit,
     onSendLogs: (android.content.Context) -> Unit,
     onNavigateBack: () -> Unit,
+    onOpenSupport: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (state == null) {
@@ -204,6 +205,11 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = { onSendLogs(context) }, modifier = Modifier.fillMaxWidth()) {
             Text("Envoyer les logs")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = onOpenSupport, modifier = Modifier.fillMaxWidth()) {
+            Text("Centre d'aide / Feedback")
         }
 
         Spacer(modifier = Modifier.height(12.dp))

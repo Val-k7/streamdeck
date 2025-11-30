@@ -36,7 +36,7 @@ class AppContainer(private val application: Application) {
 
     val securePreferences by lazy { SecurePreferences(application) }
     private val settingsRepository by lazy { SettingsRepository(application) }
-    private val networkMonitor by lazy { NetworkStatusMonitor(application, appScope) }
+    val networkMonitor by lazy { NetworkStatusMonitor(application, appScope) }
     private val authRepository by lazy { AuthRepository(securePreferences) }
     val logger by lazy { UnifiedLogger(application, appScope) }
     private val webSocketClient by lazy {
@@ -66,4 +66,14 @@ class AppContainer(private val application: Application) {
     }
     val controlEventSender by lazy { ControlEventSender(webSocketClient, logger) }
     val preferences by lazy { settingsRepository }
+
+    val diagnosticsReporter by lazy {
+        DiagnosticsReporter(
+            settingsRepository = settingsRepository,
+            securePreferences = securePreferences,
+            networkStatusMonitor = networkMonitor,
+            connectionManager = connectionManager
+        )
+    }
+    val feedbackRepository by lazy { FeedbackRepository() }
 }

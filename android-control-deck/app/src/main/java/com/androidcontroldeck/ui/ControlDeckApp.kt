@@ -11,6 +11,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Text
@@ -53,6 +54,14 @@ fun ControlDeckApp(container: AppContainer) {
                             Icons.Default.Settings,
                             contentDescription = stringResource(R.string.control_deck_action_settings)
                         )
+                    }
+                    IconButton(onClick = {
+                        navController.navigate(
+                            Destination.Support.route,
+                            navOptions { launchSingleTop = true }
+                        )
+                    }) {
+                        Icon(Icons.Default.Help, contentDescription = "Aide et support")
                     }
                 }
             )

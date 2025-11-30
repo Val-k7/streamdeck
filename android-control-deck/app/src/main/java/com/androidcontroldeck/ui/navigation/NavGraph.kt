@@ -10,29 +10,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import com.androidcontroldeck.AppContainer
 import com.androidcontroldeck.localization.applyAppLocale
 import com.androidcontroldeck.ui.screens.EditorScreen
 import com.androidcontroldeck.ui.screens.ProfileScreen
 import com.androidcontroldeck.ui.screens.SettingsScreen
+import com.androidcontroldeck.ui.screens.SupportScreen
 import kotlinx.coroutines.launch
 
 sealed class Destination(val route: String) {
     data object Profile : Destination("profile")
     data object Editor : Destination("editor")
     data object Settings : Destination("settings")
+    data object Support : Destination("support")
 }
 
 @Composable
 fun ControlDeckNavHost(
     container: AppContainer,
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier
 ) {
     val profiles = container.profileRepository.profiles.collectAsState()
     val currentProfile = container.profileRepository.currentProfile.collectAsState()
     val settingsState = container.preferences.settings.collectAsState(initial = null)
+    val isOnline = container.networkMonitor.isOnline.collectAsState(initial = false)
+    val isSocketConnected = container.connectionManager.isConnected.collectAsState(initial = false)
     val storedSecret = container.securePreferences.getHandshakeSecret()
     val diagnosticsState = container.diagnosticsRepository.diagnostics.collectAsState()
 
@@ -55,7 +59,14 @@ fun ControlDeckNavHost(
                 },
                 onNavigateEditor = { navController.navigate(Destination.Editor.route) },
                 onNavigateSettings = { navController.navigate(Destination.Settings.route) },
-                assetCache = container.assetCache
+                onNavigateSupport = { navController.navigate(Destination.Support.route) },
+                assetCache = container.assetCache,
+                showOnboarding = settingsState.value?.onboardingCompleted == false,
+                onCompleteOnboarding = {
+                    scope.launch { container.preferences.update { copy(onboardingCompleted = true) } }
+                },
+                isOnline = isOnline.value,
+                isSocketConnected = isSocketConnected.value
             )
         }
 
