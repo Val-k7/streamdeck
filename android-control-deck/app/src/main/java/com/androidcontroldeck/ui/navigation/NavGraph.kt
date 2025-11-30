@@ -29,6 +29,7 @@ fun ControlDeckNavHost(
     val profiles = container.profileRepository.profiles.collectAsState()
     val currentProfile = container.profileRepository.currentProfile.collectAsState()
     val settingsState = container.preferences.settings.collectAsState(initial = null)
+    val storedSecret = container.securePreferences.getHandshakeSecret()
 
     val scope = rememberCoroutineScope()
 
@@ -61,10 +62,16 @@ fun ControlDeckNavHost(
         composable(Destination.Settings.route) {
             SettingsScreen(
                 state = settingsState.value,
-                onSettingsChanged = { updates ->
+                handshakeSecret = storedSecret,
+                onSettingsChanged = { updates, secret ->
                     scope.launch {
                         container.preferences.update(updates)
-                        container.connectionManager.connect()
+                        if (secret.isNotBlank()) {
+                            container.securePreferences.saveHandshakeSecret(secret)
+                            container.securePreferences.clearAuthToken()
+                        }
+                        if (secret.isBlank()) container.securePreferences.clearHandshakeSecret()
+                        container.connectionManager.connect(secret.ifBlank { null })
                     }
                 },
                 onNavigateBack = { navController.popBackStack() }

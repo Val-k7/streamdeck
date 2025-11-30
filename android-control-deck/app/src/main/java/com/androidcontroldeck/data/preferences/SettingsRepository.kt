@@ -2,6 +2,7 @@ package com.androidcontroldeck.data.preferences
 
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,6 +18,8 @@ private val HEARTBEAT_INTERVAL = intPreferencesKey("heartbeat_interval")
 private val LATENCY = intPreferencesKey("latency_target")
 private val THEME = stringPreferencesKey("theme")
 private val LANGUAGE = stringPreferencesKey("language")
+private val USE_TLS = booleanPreferencesKey("use_tls")
+private val PINNED_CERT = stringPreferencesKey("pinned_cert")
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -26,7 +29,9 @@ data class SettingsState(
     val heartbeatIntervalMs: Int = 5_000,
     val latencyMs: Int = 16,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val language: String = "fr"
+    val language: String = "fr",
+    val useTls: Boolean = false,
+    val pinnedCertSha256: String? = null
 )
 
 class SettingsRepository(private val context: Context) {
@@ -37,7 +42,9 @@ class SettingsRepository(private val context: Context) {
             heartbeatIntervalMs = prefs[HEARTBEAT_INTERVAL] ?: 5_000,
             latencyMs = prefs[LATENCY] ?: 16,
             themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
-            language = prefs[LANGUAGE] ?: "fr"
+            language = prefs[LANGUAGE] ?: "fr",
+            useTls = prefs[USE_TLS] ?: false,
+            pinnedCertSha256 = prefs[PINNED_CERT]
         )
     }
 
@@ -51,6 +58,9 @@ class SettingsRepository(private val context: Context) {
             prefs[LATENCY] = updated.latencyMs
             prefs[THEME] = updated.themeMode.name
             prefs[LANGUAGE] = updated.language
+            prefs[USE_TLS] = updated.useTls
+            updated.pinnedCertSha256?.let { prefs[PINNED_CERT] = it }
+                ?: prefs.remove(PINNED_CERT)
         }
     }
 
@@ -60,6 +70,8 @@ class SettingsRepository(private val context: Context) {
         heartbeatIntervalMs = prefs[HEARTBEAT_INTERVAL] ?: 5_000,
         latencyMs = prefs[LATENCY] ?: 16,
         themeMode = prefs[THEME]?.let { ThemeMode.valueOf(it) } ?: ThemeMode.SYSTEM,
-        language = prefs[LANGUAGE] ?: "fr"
+        language = prefs[LANGUAGE] ?: "fr",
+        useTls = prefs[USE_TLS] ?: false,
+        pinnedCertSha256 = prefs[PINNED_CERT]
     )
 }
