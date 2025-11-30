@@ -22,37 +22,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.androidcontroldeck.R
 import com.androidcontroldeck.data.preferences.SettingsState
 import com.androidcontroldeck.data.preferences.ThemeMode
-import com.androidcontroldeck.localization.SYSTEM_LANGUAGE_TAG
-
-private data class LanguageOption(val tag: String, @StringRes val labelRes: Int)
-
-private val languageOptions = listOf(
-    LanguageOption(SYSTEM_LANGUAGE_TAG, R.string.settings_language_follow_system),
-    LanguageOption("en", R.string.settings_language_en),
-    LanguageOption("fr", R.string.settings_language_fr)
-)
-
-@StringRes
-private fun ThemeMode.labelRes(): Int = when (this) {
-    ThemeMode.SYSTEM -> R.string.settings_theme_system
-    ThemeMode.LIGHT -> R.string.settings_theme_light
-    ThemeMode.DARK -> R.string.settings_theme_dark
-}
+import com.androidcontroldeck.logging.DiagnosticsState
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
 fun SettingsScreen(
     state: SettingsState?,
     handshakeSecret: String?,
+    diagnostics: DiagnosticsState,
     onSettingsChanged: (SettingsState.() -> SettingsState, String) -> Unit,
+    onSendLogs: (android.content.Context) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -61,6 +48,7 @@ fun SettingsScreen(
         return
     }
 
+    val context = LocalContext.current
     val ip = remember(state.serverIp) { mutableStateOf(state.serverIp) }
     val port = remember(state.serverPort) { mutableStateOf(state.serverPort.toString()) }
     val heartbeat = remember(state.heartbeatIntervalMs) { mutableStateOf(state.heartbeatIntervalMs.toFloat()) }
@@ -197,11 +185,45 @@ fun SettingsScreen(
             Text(stringResource(R.string.settings_save))
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Diagnostics", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+        DiagnosticRow("Version", diagnostics.versionName)
+        DiagnosticRow(
+            label = "Latence moyenne",
+            value = diagnostics.averageLatencyMs?.let { "${it.toInt()} ms" } ?: "Non disponible"
+        )
+        DiagnosticRow(
+            label = "Dernier échec réseau",
+            value = diagnostics.lastNetworkFailure?.let {
+                val formattedDate = DateFormat.getDateTimeInstance().format(Date(it.at))
+                "${it.message} ($formattedDate)"
+            } ?: "Aucun"
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(onClick = { onSendLogs(context) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Envoyer les logs")
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
         Text(
             stringResource(R.string.settings_onboarding_note),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Start
         )
+    }
+}
+
+@Composable
+private fun DiagnosticRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
