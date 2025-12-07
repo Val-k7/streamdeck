@@ -36,8 +36,7 @@ const Index = () => {
 
   // Utiliser un state réactif pour le bridge Android car il peut être injecté après le rendu initial
   const [isAndroidBridge, setIsAndroidBridge] = useState(() => {
-    const hasAndroid =
-      typeof window !== "undefined" && !!window.Android;
+    const hasAndroid = typeof window !== "undefined" && !!window.Android;
     console.log("[Index] Initial isAndroidBridge check:", hasAndroid);
     return hasAndroid;
   });
@@ -113,12 +112,17 @@ const Index = () => {
   useEffect(() => {
     logger.debug("Index: profiles state changed", {
       count: profiles.profiles.length,
-      profiles: profiles.profiles.map(p => ({ id: p.id, name: p.name })),
+      profiles: profiles.profiles.map((p) => ({ id: p.id, name: p.name })),
       loading: profiles.loading,
       error: profiles.error,
       selectedProfile: profiles.selectedProfile?.id,
     });
-  }, [profiles.profiles, profiles.loading, profiles.error, profiles.selectedProfile]);
+  }, [
+    profiles.profiles,
+    profiles.loading,
+    profiles.error,
+    profiles.selectedProfile,
+  ]);
 
   // Charger les profils au démarrage
   useEffect(() => {
@@ -175,7 +179,7 @@ const Index = () => {
         profiles.profiles.length;
       setSlideDirection(direction);
       const newProfileId = profiles.profiles[newIndex].id;
-      
+
       try {
         await profiles.loadProfile(newProfileId);
         setActiveProfileId(newProfileId);
@@ -211,39 +215,47 @@ const Index = () => {
     threshold: 60,
   });
 
-  const handleProfileChange = useCallback(async (profileId: string) => {
-    // Permettre le changement même si activeProfileId est null
-    logger.debug("Index: change profile", profileId, "from", activeProfileId);
-    
-    if (activeProfileId) {
-      const currentIndex = profiles.profiles.findIndex(
-        (p) => p.id === activeProfileId
-      );
-      const newIndex = profiles.profiles.findIndex((p) => p.id === profileId);
-      setSlideDirection(newIndex > currentIndex ? 1 : -1);
-    } else {
-      setSlideDirection(0);
-    }
-    
-    // D'abord charger le profil, puis mettre à jour l'ID actif
-    try {
-      await profiles.loadProfile(profileId);
-      setActiveProfileId(profileId);
-      setActivePage((prev) => ({ ...prev, [profileId]: prev[profileId] || 0 }));
-      logger.debug("Index: profile loaded successfully", profileId);
-    } catch (err) {
-      logger.error("Index: failed to load profile", profileId, err);
-      // Mettre à jour l'ID quand même pour permettre un retry
-      setActiveProfileId(profileId);
-    }
-  }, [activeProfileId, profiles]);
+  const handleProfileChange = useCallback(
+    async (profileId: string) => {
+      // Permettre le changement même si activeProfileId est null
+      logger.debug("Index: change profile", profileId, "from", activeProfileId);
+
+      if (activeProfileId) {
+        const currentIndex = profiles.profiles.findIndex(
+          (p) => p.id === activeProfileId
+        );
+        const newIndex = profiles.profiles.findIndex((p) => p.id === profileId);
+        setSlideDirection(newIndex > currentIndex ? 1 : -1);
+      } else {
+        setSlideDirection(0);
+      }
+
+      // D'abord charger le profil, puis mettre à jour l'ID actif
+      try {
+        await profiles.loadProfile(profileId);
+        setActiveProfileId(profileId);
+        setActivePage((prev) => ({
+          ...prev,
+          [profileId]: prev[profileId] || 0,
+        }));
+        logger.debug("Index: profile loaded successfully", profileId);
+      } catch (err) {
+        logger.error("Index: failed to load profile", profileId, err);
+        // Mettre à jour l'ID quand même pour permettre un retry
+        setActiveProfileId(profileId);
+      }
+    },
+    [activeProfileId, profiles]
+  );
 
   // Convertir les contrôles du profil serveur en format PadConfig
   const convertProfileToDecks = useCallback(() => {
     if (!profiles.selectedProfile) return {};
 
     // Mapper les types serveur/Android vers les types web UI supportés
-    const mapControlType = (serverType: string): "button" | "toggle" | "fader" | "encoder" => {
+    const mapControlType = (
+      serverType: string
+    ): "button" | "toggle" | "fader" | "encoder" => {
       const type = serverType.toLowerCase();
       switch (type) {
         case "button":
@@ -257,7 +269,9 @@ const Index = () => {
         case "encoder":
           return "encoder";
         default:
-          logger.warn(`Unknown control type "${serverType}", defaulting to button`);
+          logger.warn(
+            `Unknown control type "${serverType}", defaulting to button`
+          );
           return "button";
       }
     };
@@ -268,15 +282,25 @@ const Index = () => {
       const size = `${colSpan}x${rowSpan}` as "1x1" | "2x1" | "1x2" | "2x2";
 
       // Mapper colorHex vers une couleur de pad supportée
-      const mapColor = (colorHex?: string): "primary" | "accent" | "destructive" | "muted" => {
+      const mapColor = (
+        colorHex?: string
+      ): "primary" | "accent" | "destructive" | "muted" => {
         if (!colorHex) return "primary";
         const hex = colorHex.toLowerCase();
         // Rouge/Orange = destructive
-        if (hex.startsWith("#f44") || hex.startsWith("#e91") || hex.startsWith("#ff5")) {
+        if (
+          hex.startsWith("#f44") ||
+          hex.startsWith("#e91") ||
+          hex.startsWith("#ff5")
+        ) {
           return "destructive";
         }
         // Gris/Foncé = muted
-        if (hex.startsWith("#666") || hex.startsWith("#888") || hex.startsWith("#999")) {
+        if (
+          hex.startsWith("#666") ||
+          hex.startsWith("#888") ||
+          hex.startsWith("#999")
+        ) {
           return "muted";
         }
         return "primary";
@@ -387,66 +411,68 @@ const Index = () => {
         <ConnectionIndicator status={ws.status} />
         <SettingsButton onClick={() => setSettingsOpen(true)} />
 
-      {/* Navigation entre pages */}
-      {maxPages > 1 && (
-        <div className="absolute top-20 left-0 right-0 flex justify-center gap-2 z-10">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigatePage(-1)}
-            disabled={!canGoPrevPage}
-            className="bg-card/80 backdrop-blur-md"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="px-3 py-1 bg-card/80 backdrop-blur-md rounded-full text-xs text-mono">
-            Page {currentPage + 1} / {maxPages}
+        {/* Navigation entre pages */}
+        {maxPages > 1 && (
+          <div className="absolute top-20 left-0 right-0 flex justify-center gap-2 z-10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigatePage(-1)}
+              disabled={!canGoPrevPage}
+              className="bg-card/80 backdrop-blur-md"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="px-3 py-1 bg-card/80 backdrop-blur-md rounded-full text-xs text-mono">
+              Page {currentPage + 1} / {maxPages}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigatePage(1)}
+              disabled={!canGoNextPage}
+              className="bg-card/80 backdrop-blur-md"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigatePage(1)}
-            disabled={!canGoNextPage}
-            className="bg-card/80 backdrop-blur-md"
+        )}
+
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={displayActiveProfile}
+            className="w-full h-full"
+            initial={{ x: slideDirection * 100 + "%", opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: slideDirection * -100 + "%", opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            <DeckGrid
+              activeProfile={displayActiveProfile}
+              decks={effectiveDecks}
+              states={states}
+              onUpdatePad={updatePad}
+              onUpdatePadState={updatePadState}
+              onUpdateFaderValue={updateFaderValue}
+              currentPage={currentPage}
+              websocket={ws}
+              selectedProfileId={profiles.selectedProfile?.id}
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        <ProfileTabs
+          profiles={displayProfiles}
+          activeProfile={displayActiveProfile}
+          onProfileChange={handleProfileChange}
+        />
+        <div className="fixed top-2 left-2 px-3 py-2 bg-card/80 border border-border/60 rounded text-xs text-mono space-y-1 pointer-events-none">
+          <div>Android bridge: {isAndroidBridge ? "available" : "missing"}</div>
+          <div>WS status: {ws.status}</div>
+          {ws.error && (
+            <div className="text-destructive">Error: {ws.error}</div>
+          )}
         </div>
-      )}
-
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={displayActiveProfile}
-          className="w-full h-full"
-          initial={{ x: slideDirection * 100 + "%", opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: slideDirection * -100 + "%", opacity: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        >
-          <DeckGrid
-            activeProfile={displayActiveProfile}
-            decks={effectiveDecks}
-            states={states}
-            onUpdatePad={updatePad}
-            onUpdatePadState={updatePadState}
-            onUpdateFaderValue={updateFaderValue}
-            currentPage={currentPage}
-            websocket={ws}
-            selectedProfileId={profiles.selectedProfile?.id}
-          />
-        </motion.div>
-      </AnimatePresence>
-
-      <ProfileTabs
-        profiles={displayProfiles}
-        activeProfile={displayActiveProfile}
-        onProfileChange={handleProfileChange}
-      />
-      <div className="fixed top-2 left-2 px-3 py-2 bg-card/80 border border-border/60 rounded text-xs text-mono space-y-1 pointer-events-none">
-        <div>Android bridge: {isAndroidBridge ? "available" : "missing"}</div>
-        <div>WS status: {ws.status}</div>
-        {ws.error && <div className="text-destructive">Error: {ws.error}</div>}
-      </div>
       </div>
     </>
   );

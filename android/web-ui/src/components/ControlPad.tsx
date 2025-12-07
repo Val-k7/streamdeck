@@ -491,7 +491,7 @@ export const ControlPad = ({
 
     if (isHorizontal) {
       return (
-        <div 
+        <div
           ref={faderTrackRef}
           className="w-full h-full relative touch-none cursor-pointer overflow-hidden"
           onPointerDown={handleFaderPointerDown}
@@ -531,7 +531,7 @@ export const ControlPad = ({
 
     // Vertical fader - remplit toute la case
     return (
-      <div 
+      <div
         ref={faderTrackRef}
         className="w-full h-full relative touch-none cursor-pointer overflow-hidden"
         onPointerDown={handleFaderPointerDown}

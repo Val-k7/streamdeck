@@ -1,4 +1,5 @@
 import { PadConfig } from "@/hooks/useDeckStorage";
+import { logger } from "@/lib/logger";
 import {
   Circle,
   Headphones,
@@ -21,7 +22,6 @@ import {
 import { useState } from "react";
 import { ControlPad } from "./ControlPad";
 import { PadEditor, getIconByName } from "./PadEditor";
-import { logger } from "@/lib/logger";
 
 // Default profile decks (used when no localStorage data exists)
 const defaultProfileDecks: Record<string, PadConfig[]> = {
@@ -261,22 +261,22 @@ const defaultProfileDecks: Record<string, PadConfig[]> = {
 
 // Icon mapping for default pads
 const iconMap: Record<string, LucideIcon> = {
-  "Mic": Mic,
-  "MicOff": MicOff,
-  "Video": Video,
-  "Monitor": Monitor,
-  "Volume2": Volume2,
-  "Play": Play,
-  "Square": Square,
-  "Circle": Circle,
-  "Layers": Layers,
-  "MessageSquare": MessageSquare,
-  "Music": Music,
-  "Headphones": Headphones,
-  "Radio": Radio,
-  "Wifi": Wifi,
-  "Zap": Zap,
-  "RotateCcw": RotateCcw,
+  Mic: Mic,
+  MicOff: MicOff,
+  Video: Video,
+  Monitor: Monitor,
+  Volume2: Volume2,
+  Play: Play,
+  Square: Square,
+  Circle: Circle,
+  Layers: Layers,
+  MessageSquare: MessageSquare,
+  Music: Music,
+  Headphones: Headphones,
+  Radio: Radio,
+  Wifi: Wifi,
+  Zap: Zap,
+  RotateCcw: RotateCcw,
 };
 
 interface DeckGridProps {
@@ -337,15 +337,18 @@ export const DeckGrid = ({
 
   const handlePadPress = async (pad: PadConfig) => {
     logger.debug("DeckGrid: pad pressed", pad.id, pad.type, pad.action);
-    
+
     // Envoyer l'action au serveur via WebSocket
     if (websocket?.status === "online" && websocket.sendControl) {
       try {
         await websocket.sendControl({
           controlId: pad.id,
-          value: pad.type === "toggle" 
-            ? (profileState.padStates[pad.id] ? 0 : 1) 
-            : 1,
+          value:
+            pad.type === "toggle"
+              ? profileState.padStates[pad.id]
+                ? 0
+                : 1
+              : 1,
           meta: pad.action ? { actionType: pad.action.type } : undefined,
         });
         logger.debug("DeckGrid: control sent successfully", pad.id);
@@ -353,7 +356,10 @@ export const DeckGrid = ({
         logger.error("DeckGrid: failed to send control", pad.id, err);
       }
     } else {
-      logger.warn("DeckGrid: WebSocket not connected, cannot send control", pad.id);
+      logger.warn(
+        "DeckGrid: WebSocket not connected, cannot send control",
+        pad.id
+      );
     }
 
     // Mettre à jour l'état local pour les toggles

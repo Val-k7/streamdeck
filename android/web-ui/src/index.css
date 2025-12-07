@@ -104,7 +104,9 @@ All colors MUST be HSL.
   }
 
   /* Empêcher le zoom sur les inputs */
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     font-size: 16px;
   }
 }
