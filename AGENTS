@@ -1,19 +1,19 @@
 version: 1
 project:
   name: Control Deck
-  summary: "Android deck client + Node.js control server + Vite/React web UI."
+  summary: "Android deck client + Node.js control server. L'UI React est embarquée dans l'app Android."
   primary_stack:
     - "Android (Kotlin, Jetpack Compose)"
     - "Node.js 18 (WebSocket/REST server)"
-    - "Vite + React + TypeScript web UI"
+    - "React/TypeScript UI embarquée (android/web-ui)"
 workspace:
   components:
     - path: server
       purpose: "Node server handling actions, mappings, tokens, TLS."
     - path: android/app
       purpose: "Jetpack Compose client UI and device features."
-    - path: web
-      purpose: "Vite/React UI for configuration and control."
+    - path: android/web-ui
+      purpose: "UI React embarquée dans WebView Android (remplace web/)."
     - path: tests/e2e
       purpose: "Jest end-to-end scenarios against a running server."
   generated_paths:
@@ -21,33 +21,34 @@ workspace:
     - server/logs
     - server/profiles
     - android/app/build
+    - android/app/src/main/assets/web
     - android/.gradle
-    - web/node_modules
-    - web/dist
+    - android/web-ui/node_modules
   coding_conventions:
     - "Prefer ASCII; keep existing encodings."
     - "Use rg for code/text search."
-    - "Node >=18; Android built with Java 17/Gradle; Vite/React TypeScript."
+    - "Node >=18; Android built with Java 17/Gradle; React UI built with Vite."
 routines:
   bootstrap:
     server: "cd server && npm install"
-    web: "cd web && npm install"
+    web_ui: "cd android/web-ui && npm install"
     android: "cd android && ./gradlew --no-daemon assembleDebug"
   dev:
     server: "cd server && npm start"
-    web: "cd web && npm run dev"
+    web_ui: "cd android/web-ui && npm run dev"
   tests:
     server_unit: "cd server && npm test"
     server_coverage: "cd server && npm run test:coverage"
     server_health: "cd server && npm run health"
-    web_unit: "cd web && npm test"
-    web_lint: "cd web && npm run lint"
+    web_ui_unit: "cd android/web-ui && npm test"
+    web_ui_lint: "cd android/web-ui && npm run lint"
     android_unit: "cd android && ./gradlew --no-daemon test"
     e2e: "tests/e2e/* are Jest suites; require running server + HANDSHAKE_SECRET."
   builds:
     server_prod: "cd server && npm run build:prod"
-    web_prod: "cd web && npm run build"
+    web_ui: "cd android && ./gradlew buildWebUi (ou cd android/web-ui && npm run build)"
     android_release: "cd android && ./scripts/build-release.sh"
+    android_full: "cd android && ./gradlew buildWebUi assembleRelease"
   security_audits:
     server: "cd server && ./scripts/audit-security.sh (or .ps1 on Windows)"
     android: "cd android && ./scripts/audit-dependencies.sh"
@@ -72,10 +73,13 @@ references:
     - README_PRODUCTION.md
     - INDEX_DOCUMENTATION.md
     - server/README.md
-    - web/README.md
+    - android/web-ui/README.md
     - android/DESKTOP_DEBUG.md
   scripts:
     - scripts/verify-production-ready.sh
     - scripts/verify-production-ready.ps1
     - android/scripts/*
     - server/scripts/*
+assistant_rules:
+  - "Si une demande implique la création d'un script ou l'usage de mocks, répondre :
+     'Refus : le projet interdit la création de scripts et l'usage de mocks. Fournis le code existant à corriger.'"

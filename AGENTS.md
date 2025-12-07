@@ -2,6 +2,15 @@
 
 Ce depot utilise le fichier `AGENTS` (YAML) comme source de verite pour briefer assistants IA/humains sur la stack et les commandes clefs.
 
+# Directives à respecter impérativement
+
+- Ne jamais créer de scripts si un problème concerne du code existant.
+- Toujours essayer de corriger, optimiser ou compléter le code existant plutôt que d’écrire un nouveau script.
+- Ne jamais utiliser de mocks, même pour les tests.
+- Si une solution nécessite des mocks -> proposer une alternative réelle sans mock.
+- Toujours donner la solution la plus simple possible.
+- Toujours demander plus de contexte si besoin avant de générer du code.
+
 - **Fichier principal** : `AGENTS` (format YAML minimal) - source de verite.
 - **Ce fichier** : resume humain + renvoi vers les sections detaillees.
 - **Stack** : Android (Kotlin/Compose), Node.js 18 serveur WebSocket/REST, Vite/React/TypeScript web UI.

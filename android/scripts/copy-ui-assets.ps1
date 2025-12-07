@@ -20,7 +20,12 @@ if ($Build) {
     Push-Location $WebDir
     $env:VITE_ANDROID_BUILD = "true"
     npm run build
-    Remove-Item Env:\VITE_ANDROID_BUILD
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Build failed" -ForegroundColor Red
+        Pop-Location
+        exit 1
+    }
+    Remove-Item Env:\VITE_ANDROID_BUILD -ErrorAction SilentlyContinue
     Pop-Location
 }
 
@@ -45,6 +50,11 @@ if (Test-Path $AndroidAssetsDir) {
 # Copier les fichiers
 Write-Host "Copying files..." -ForegroundColor Yellow
 Copy-Item -Path "$WebDistDir\*" -Destination $AndroidAssetsDir -Recurse -Force
+
+# NOTE: Ne pas modifier les chemins - Vite génère /assets/ et WebViewAssetLoader les intercepte correctement
+# Corriger les chemins des assets dans index.html pour Android WebView
+# Write-Host "Fixing asset paths for WebView..." -ForegroundColor Yellow
+# & (Join-Path $ScriptDir "fix-ui-assets.ps1") -AssetPath $AndroidAssetsDir
 
 Write-Host "UI assets copied successfully!" -ForegroundColor Green
 Write-Host "   Source: $WebDistDir" -ForegroundColor Gray
