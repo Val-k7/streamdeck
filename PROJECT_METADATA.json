@@ -1,0 +1,106 @@
+{
+  "name": "Control Deck",
+  "version": "1.0.0",
+  "description": "Application complète de contrôle à distance pour gérer votre ordinateur depuis Android",
+  "author": "Control Deck Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/control-deck"
+  },
+  "keywords": [
+    "android",
+    "remote-control",
+    "streaming",
+    "obs",
+    "audio-control",
+    "automation",
+    "plugins"
+  ],
+  "platforms": {
+    "android": {
+      "minSdk": 26,
+      "targetSdk": 34,
+      "language": "Kotlin",
+      "ui": "Jetpack Compose"
+    },
+    "server": {
+      "node": ">=18.0.0",
+      "platforms": ["windows", "linux", "macos"]
+    }
+  },
+  "features": {
+    "application": [
+      "Material Design 3 UI",
+      "Theme customization",
+      "Profile management",
+      "Import/Export",
+      "Offline mode",
+      "Auto-reconnect",
+      "Debug tools",
+      "Performance monitoring"
+    ],
+    "server": [
+      "WebSocket server",
+      "REST API",
+      "Plugin system",
+      "Audio control",
+      "OBS integration",
+      "Keyboard control",
+      "System control",
+      "Rate limiting",
+      "Audit logging",
+      "Health monitoring"
+    ],
+    "plugins": [
+      "Discord",
+      "Spotify",
+      "OBS Studio",
+      "Custom plugins"
+    ]
+  },
+  "documentation": {
+    "main": "README.md",
+    "quickStart": "QUICK_START.md",
+    "deployment": "DEPLOYMENT.md",
+    "contributing": "CONTRIBUTING.md",
+    "index": "DOCUMENTATION_INDEX.md"
+  },
+  "scripts": {
+    "server": {
+      "start": "npm start",
+      "build": "npm run build",
+      "health": "npm run health",
+      "backup": "npm run backup",
+      "clean": "npm run clean",
+      "validate": "npm run validate"
+    }
+  },
+  "ci": {
+    "provider": "GitHub Actions",
+    "workflows": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml"
+    ]
+  },
+  "deployment": {
+    "methods": [
+      "Docker",
+      "Docker Compose",
+      "PM2",
+      "systemd"
+    ],
+    "config": "DEPLOYMENT.md"
+  },
+  "status": {
+    "production": true,
+    "version": "1.0.0",
+    "lastUpdated": "2024"
+  }
+}
+
+
+
+
+
+

@@ -1,0 +1,81 @@
+version: 1
+project:
+  name: Control Deck
+  summary: "Android deck client + Node.js control server + Vite/React web UI."
+  primary_stack:
+    - "Android (Kotlin, Jetpack Compose)"
+    - "Node.js 18 (WebSocket/REST server)"
+    - "Vite + React + TypeScript web UI"
+workspace:
+  components:
+    - path: server
+      purpose: "Node server handling actions, mappings, tokens, TLS."
+    - path: android/app
+      purpose: "Jetpack Compose client UI and device features."
+    - path: web
+      purpose: "Vite/React UI for configuration and control."
+    - path: tests/e2e
+      purpose: "Jest end-to-end scenarios against a running server."
+  generated_paths:
+    - server/config
+    - server/logs
+    - server/profiles
+    - android/app/build
+    - android/.gradle
+    - web/node_modules
+    - web/dist
+  coding_conventions:
+    - "Prefer ASCII; keep existing encodings."
+    - "Use rg for code/text search."
+    - "Node >=18; Android built with Java 17/Gradle; Vite/React TypeScript."
+routines:
+  bootstrap:
+    server: "cd server && npm install"
+    web: "cd web && npm install"
+    android: "cd android && ./gradlew --no-daemon assembleDebug"
+  dev:
+    server: "cd server && npm start"
+    web: "cd web && npm run dev"
+  tests:
+    server_unit: "cd server && npm test"
+    server_coverage: "cd server && npm run test:coverage"
+    server_health: "cd server && npm run health"
+    web_unit: "cd web && npm test"
+    web_lint: "cd web && npm run lint"
+    android_unit: "cd android && ./gradlew --no-daemon test"
+    e2e: "tests/e2e/* are Jest suites; require running server + HANDSHAKE_SECRET."
+  builds:
+    server_prod: "cd server && npm run build:prod"
+    web_prod: "cd web && npm run build"
+    android_release: "cd android && ./scripts/build-release.sh"
+  security_audits:
+    server: "cd server && ./scripts/audit-security.sh (or .ps1 on Windows)"
+    android: "cd android && ./scripts/audit-dependencies.sh"
+  production_gate: "scripts/verify-production-ready.sh (or .ps1 on Windows)"
+env:
+  server:
+    PORT: "WebSocket/REST port (default 4455)"
+    HOST: "Bind address (default 0.0.0.0)"
+    DECK_TOKEN: "Default auth token for handshake"
+    HANDSHAKE_SECRET: "Secret used to issue temporary tokens"
+    DECK_DATA_DIR: "Override data root (config, profiles, logs)"
+    LOG_LEVEL: "error|warn|info|debug"
+    TLS_KEY_PATH: "TLS key path (optional)"
+    TLS_CERT_PATH: "TLS cert path (optional)"
+safety:
+  - "Do not commit tokens, TLS keys, keystores, or contents of server/config, server/logs, server/profiles."
+  - "Use project scripts instead of ad-hoc commands where available."
+  - "Keep tests/e2e pointing to a non-production server; requires HANDSHAKE_SECRET."
+references:
+  docs:
+    - README.md
+    - README_PRODUCTION.md
+    - INDEX_DOCUMENTATION.md
+    - server/README.md
+    - web/README.md
+    - android/DESKTOP_DEBUG.md
+  scripts:
+    - scripts/verify-production-ready.sh
+    - scripts/verify-production-ready.ps1
+    - android/scripts/*
+    - server/scripts/*

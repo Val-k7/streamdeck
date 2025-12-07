@@ -1,0 +1,41 @@
+{
+  "name": "webhook",
+  "version": "1.0.0",
+  "description": "Plugin Webhook - Envoie des requêtes HTTP",
+  "main": "index.js",
+  "author": "Control Deck",
+  "license": "MIT",
+  "actions": [
+    {
+      "name": "send",
+      "description": "Envoie une requête HTTP",
+      "parameters": {
+        "url": {
+          "type": "string",
+          "required": true,
+          "description": "URL du webhook"
+        },
+        "method": {
+          "type": "string",
+          "required": false,
+          "description": "Méthode HTTP (GET, POST, etc.)"
+        },
+        "body": {
+          "type": "object",
+          "required": false,
+          "description": "Corps de la requête"
+        }
+      }
+    }
+  ],
+  "config": {
+    "enabled": true,
+    "defaultMethod": "POST",
+    "timeout": 5000
+  }
+}
+
+
+
+
+

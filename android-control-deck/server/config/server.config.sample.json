@@ -1,6 +1,0 @@
-{
-  "port": 4455,
-  "defaultToken": "change-me",
-  "handshakeSecret": "change-me",
-  "mappingsFile": "mappings/default.json"
-}

@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release-server:
+    name: Release Server
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: android-control-deck/server/package-lock.json
+
+    - name: Install dependencies
+      working-directory: android-control-deck/server
+      run: npm ci
+
+    - name: Build
+      working-directory: android-control-deck/server
+      run: npm run build:prod
+
+    - name: Create release archive
+      working-directory: android-control-deck/server
+      run: |
+        tar -czf control-deck-server-${{ github.ref_name }}.tar.gz \
+          dist/ config/ profiles/ plugins/ package.json \
+          scripts/ Dockerfile docker-compose.yml
+
+    - name: Upload release asset
+      uses: actions/upload-artifact@v3
+      with:
+        name: server-release
+        path: android-control-deck/server/control-deck-server-*.tar.gz
+
+    - name: Build and push Docker image
+      if: github.event_name == 'push'
+      uses: docker/build-push-action@v4
+      with:
+        context: android-control-deck/server
+        push: true
+        tags: |
+          control-deck/server:${{ github.ref_name }}
+          control-deck/server:latest
+        cache-from: type=registry,ref=control-deck/server:buildcache
+        cache-to: type=registry,ref=control-deck/server:buildcache,mode=max
+
+  release-android:
+    name: Release Android
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Grant execute permission for gradlew
+      working-directory: android-control-deck/app
+      run: chmod +x gradlew
+
+    - name: Build release APK
+      working-directory: android-control-deck/app
+      run: ./gradlew assembleRelease --no-daemon
+
+    - name: Sign APK
+      if: env.ANDROID_KEYSTORE_BASE64 != ''
+      working-directory: android-control-deck/app
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+        # Signing logic here
+
+    - name: Upload release APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-release
+        path: android-control-deck/app/build/outputs/apk/release/*.apk
+
+
+
+
+
+

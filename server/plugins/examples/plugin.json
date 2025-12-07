@@ -1,0 +1,32 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "description": "Pack d'exemples (hello-world, webhook)",
+  "main": "index.js",
+  "author": "Control Deck",
+  "license": "MIT",
+  "actions": [
+    {
+      "name": "hello",
+      "description": "Affiche un message de salutation",
+      "parameters": {
+        "name": { "type": "string", "required": false }
+      }
+    },
+    {
+      "name": "webhook_send",
+      "description": "Envoie un webhook HTTP",
+      "parameters": {
+        "url": { "type": "string", "required": true },
+        "method": { "type": "string", "required": false },
+        "body": { "type": "object", "required": false }
+      }
+    }
+  ],
+  "config": {
+    "enabled": false,
+    "hello": { "greeting": "Hello" },
+    "webhook": { "defaultMethod": "POST", "timeout": 5000 }
+  }
+}
+

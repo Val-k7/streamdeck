@@ -1,0 +1,204 @@
+<resources>
+    <string name="app_name">Android Control Deck</string>
+    <string name="control_deck_title">Android Control Deck</string>
+    <string name="control_deck_action_editor">Éditeur</string>
+    <string name="control_deck_action_settings">Paramètres</string>
+
+    <string name="settings_loading">Chargement des paramètres…</string>
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_server_ip_label">Adresse IP du serveur</string>
+    <string name="settings_port_label">Port</string>
+    <string name="settings_heartbeat_label">Intervalle de heartbeat : %1$d ms</string>
+    <string name="settings_latency_label">Latence cible : %1$d ms</string>
+    <string name="settings_theme_label">Thème : %1$s</string>
+    <string name="settings_theme_system">Système</string>
+    <string name="settings_theme_light">Clair</string>
+    <string name="settings_theme_dark">Sombre</string>
+    <string name="settings_language_label">Langue : %1$s</string>
+    <string name="settings_language_follow_system">Suivre le système</string>
+    <string name="settings_language_en">Anglais</string>
+    <string name="settings_language_fr">Français</string>
+    <string name="settings_tls_label">Activer TLS</string>
+    <string name="settings_pinned_cert_label">Empreinte SHA-256 à pinner (optionnel)</string>
+    <string name="settings_handshake_secret_label">Secret de handshake</string>
+    <string name="settings_save">Enregistrer</string>
+    <string name="settings_onboarding_note">Onboarding rapide : autorisez l\'accès réseau local et restez connecté au même Wi-Fi que le serveur pour une latence minimale.</string>
+
+    <string name="profile_loading">Chargement du profil…</string>
+
+    <string name="editor_no_profile">Aucun profil à éditer</string>
+    <string name="editor_title">Éditeur de layout</string>
+    <string name="editor_back">Retour</string>
+    <string name="editor_duplicate">Dupliquer</string>
+    <string name="editor_delete">Supprimer</string>
+    <string name="editor_new_control">Nouveau</string>
+    <string name="editor_add">Ajouter</string>
+    <string name="editor_properties">Propriétés</string>
+    <string name="editor_label">Label</string>
+    <string name="editor_type_button">Bouton</string>
+    <string name="editor_type_toggle">Toggle</string>
+    <string name="editor_type_fader">Fader</string>
+    <string name="editor_type_knob">Knob</string>
+    <string name="editor_type_pad">Pad</string>
+    <string name="editor_width">Largeur : %1$d</string>
+    <string name="editor_height">Hauteur : %1$d</string>
+
+    <string name="accessible_deck_title">Deck accessible</string>
+    <string name="accessible_start">Démarrer</string>
+    <string name="accessible_stop">Arrêter</string>
+    <string name="accessible_primary_button_desc">Bouton principal</string>
+    <string name="accessible_secondary_button_desc">Bouton secondaire</string>
+    <string name="accessible_volume">Volume</string>
+    <string name="accessible_scene_pad_desc">Pad de scène</string>
+    <string name="accessible_scene_one_title">Scène 1</string>
+    <string name="accessible_scene_one_desc">Caméra + micro</string>
+    <string name="accessible_scene_two_title">Scène 2</string>
+    <string name="accessible_scene_two_desc">Capture d\'écran</string>
+    <string name="accessible_controls_hint">Chaque contrôle possède un label, un rôle TalkBack/VoiceOver et accepte la navigation clavier ou d-pad.</string>
+
+    <string name="settings_accessibility_title">Accessibilité</string>
+    <string name="settings_reduce_motion_title">Animations réduites</string>
+    <string name="settings_reduce_motion_description">Limiter les mouvements et transitions pour réduire l\'inconfort.</string>
+    <string name="settings_haptics_title">Retour haptique</string>
+    <string name="settings_haptics_description">Activer ou couper les vibrations des contrôles.</string>
+    <string name="settings_large_text_title">Police agrandie</string>
+    <string name="settings_large_text_description">Augmenter la taille des textes pour une meilleure lisibilité.</string>
+    <string name="settings_toggle_label_format">%1$s : %2$s</string>
+    <string name="settings_toggle_state_on">activé</string>
+    <string name="settings_toggle_state_off">désactivé</string>
+
+    <string name="control_button_fallback">Bouton</string>
+    <string name="control_pad_fallback">Pad</string>
+
+    <string name="default_control_start_stream">Lancer le stream</string>
+    <string name="default_control_mic_aux">Mic/Aux</string>
+    <string name="default_control_scene">Scène</string>
+    <string name="default_profile_name">Mon deck</string>
+
+    <string name="settings_language_option_content_description">Sélectionner %1$s</string>
+
+    <!-- Profile Templates -->
+    <string name="template_streaming_name">Modèle Streaming</string>
+    <string name="template_audio_production_name">Modèle Production Audio</string>
+    <string name="template_gaming_name">Modèle Gaming</string>
+    <string name="template_productivity_name">Modèle Productivité</string>
+    <string name="template_btn_start_stream">Démarrer Stream</string>
+    <string name="template_btn_stop_stream">Arrêter Stream</string>
+    <string name="template_btn_record">Enregistrer</string>
+    <string name="template_scene_1">Scène 1</string>
+    <string name="template_scene_2">Scène 2</string>
+    <string name="template_scene_3">Scène 3</string>
+    <string name="template_mic_volume">Volume Micro</string>
+    <string name="template_mute_mic">Couper Micro</string>
+    <string name="template_system_volume">Volume Système</string>
+    <string name="template_master_volume">Master</string>
+    <string name="template_track_1">Piste 1</string>
+    <string name="template_track_2">Piste 2</string>
+    <string name="template_mic_1">Micro 1</string>
+    <string name="template_mic_2">Micro 2</string>
+    <string name="template_mute_all">Couper Tout</string>
+    <string name="template_switch_device">Changer Périphérique</string>
+    <string name="template_balance">Balance</string>
+    <string name="template_high">Aigus</string>
+    <string name="template_save">Sauvegarder</string>
+    <string name="template_load">Charger</string>
+    <string name="template_quick_save">Sauvegarde Rapide</string>
+    <string name="template_pause">Pause</string>
+    <string name="template_discord_mute">Discord Mute</string>
+    <string name="template_discord_deafen">Discord Sourdine</string>
+    <string name="template_media_play">Média Play</string>
+    <string name="template_media_next">Média Suivant</string>
+    <string name="template_game_volume">Volume Jeu</string>
+    <string name="template_new">Nouveau</string>
+    <string name="template_open">Ouvrir</string>
+    <string name="template_print">Imprimer</string>
+    <string name="template_copy">Copier</string>
+    <string name="template_paste">Coller</string>
+    <string name="template_undo">Annuler</string>
+    <string name="template_redo">Refaire</string>
+    <string name="template_screenshot">Capture d\'écran</string>
+    <string name="template_lock">Verrouiller</string>
+    <string name="template_mute">Couper</string>
+    <string name="template_volume">Volume</string>
+
+    <!-- Import Profile Dialog -->
+    <string name="import_profile_dialog_title">Importer un profil</string>
+    <string name="import_profile_dialog_preview_title">Aperçu du profil</string>
+    <string name="import_profile_dialog_conflict_detected">Conflit détecté</string>
+    <string name="import_profile_dialog_existing_profile">Profil existant : %1$s</string>
+    <string name="import_profile_dialog_strategy_replace">Remplacer</string>
+    <string name="import_profile_dialog_strategy_merge">Fusionner</string>
+    <string name="import_profile_dialog_strategy_rename">Renommer</string>
+    <string name="import_profile_dialog_new_name_label">Nouveau nom</string>
+    <string name="import_profile_dialog_validation_errors">Erreurs de validation</string>
+    <string name="import_profile_dialog_parsing_error">Erreur de parsing</string>
+    <string name="import_profile_dialog_confirm_button">Importer</string>
+    <string name="import_profile_dialog_dismiss_button">Annuler</string>
+
+    <!-- Export Profile Dialog -->
+    <string name="export_profile_dialog_title">Exporter un profil</string>
+    <string name="export_profile_dialog_filename_label">Nom de fichier</string>
+    <string name="export_profile_dialog_include_metadata">Inclure les métadonnées</string>
+    <string name="export_profile_dialog_preview">Aperçu</string>
+    <string name="export_profile_dialog_copy">Copier</string>
+    <string name="export_profile_dialog_share">Partager</string>
+    <string name="export_profile_dialog_cancel">Annuler</string>
+
+    <!-- Assistant de création de profil -->
+    <string name="wizard_title">Créer un Profil</string>
+    <string name="wizard_step">Étape %1$d sur %2$d</string>
+    <string name="wizard_cancel">Annuler</string>
+    <string name="wizard_start">Commencer</string>
+    <string name="wizard_next">Suivant</string>
+    <string name="wizard_back">Précédent</string>
+    <string name="wizard_create">Créer</string>
+    <string name="wizard_welcome_title">Bienvenue dans la création de profil</string>
+    <string name="wizard_welcome_description">Cet assistant vous guidera dans la création d\'un nouveau profil de contrôle. Vous pouvez partir d\'un modèle ou créer un profil personnalisé.</string>
+    <string name="wizard_template_title">Choisir un Modèle</string>
+    <string name="wizard_template_description">Sélectionnez un modèle pour commencer rapidement, ou créez un profil personnalisé à partir de zéro.</string>
+    <string name="wizard_use_template">Utiliser un modèle</string>
+    <string name="wizard_config_title">Configurer le Profil</string>
+    <string name="wizard_config_description">Configurez le nom de votre profil et la taille de la grille.</string>
+    <string name="wizard_profile_name">Nom du Profil</string>
+    <string name="wizard_rows">Lignes : %1$d</string>
+    <string name="wizard_cols">Colonnes : %1$d</string>
+    <string name="wizard_preview">Aperçu</string>
+    <string name="wizard_review_title">Révision</string>
+    <string name="wizard_review_description">Vérifiez les paramètres de votre profil avant de créer.</string>
+    <string name="wizard_template">Modèle</string>
+
+    <!-- Sélecteur d\'icônes -->
+    <string name="icon_picker_title">Sélectionner une Icône</string>
+    <string name="icon_picker_search">Rechercher des icônes…</string>
+    <string name="icon_picker_all">Tout</string>
+    <string name="icon_picker_done">Terminé</string>
+
+    <!-- Moniteur de santé de connexion -->
+    <string name="health_recommendations">Recommandations</string>
+    <string name="health_status_excellent">Excellent</string>
+    <string name="health_status_excellent_desc">Connexion stable et performante</string>
+    <string name="health_status_good">Bon</string>
+    <string name="health_status_good_desc">Connexion fonctionnelle avec quelques améliorations possibles</string>
+    <string name="health_status_poor">Médiocre</string>
+    <string name="health_status_poor_desc">Problèmes de connexion détectés</string>
+    <string name="health_status_connecting">Connexion…</string>
+    <string name="health_status_connecting_desc">Établissement de la connexion</string>
+    <string name="health_status_disconnected">Déconnecté</string>
+    <string name="health_status_disconnected_desc">Aucune connexion au serveur</string>
+
+    <!-- Barre d\'outils de l\'éditeur -->
+    <string name="editor_undo">Annuler</string>
+    <string name="editor_redo">Refaire</string>
+    <string name="editor_zoom_in">Zoomer</string>
+    <string name="editor_zoom_out">Dézoomer</string>
+    <string name="editor_reset_zoom">Réinitialiser le zoom</string>
+    <string name="editor_align_left">Aligner à gauche</string>
+    <string name="editor_align_center">Aligner au centre</string>
+    <string name="editor_align_right">Aligner à droite</string>
+    <string name="editor_distribute_horizontal">Distribuer horizontalement</string>
+    <string name="editor_distribute_vertical">Distribuer verticalement</string>
+    <string name="editor_group">Grouper</string>
+    <string name="editor_ungroup">Dégrouper</string>
+    <string name="editor_lock">Verrouiller</string>
+    <string name="editor_unlock">Déverrouiller</string>
+</resources>

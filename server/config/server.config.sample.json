@@ -1,0 +1,9 @@
+{
+  "port": 4455,
+  "host": "0.0.0.0",
+  "defaultToken": "",
+  "handshakeSecret": "",
+  "mappingsFile": "mappings/default.json",
+  "serverName": "",
+  "logLevel": "info"
+}

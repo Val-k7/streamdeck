@@ -1,9 +1,0 @@
-/.gradle/
-/build/
-app/build/
-benchmark/build/
-server/node_modules/
-server/build/
-local.properties
-*.iml
-/.idea/

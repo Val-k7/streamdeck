@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Configuration par défaut de l'application -->
+
+    <!-- Serveur par défaut -->
+    <string name="default_server_host">localhost</string>
+    <integer name="default_server_port">4455</integer>
+
+    <!-- Timeouts -->
+    <integer name="connection_timeout_ms">5000</integer>
+    <integer name="read_timeout_ms">10000</integer>
+    <integer name="write_timeout_ms">10000</integer>
+
+    <!-- Reconnexion -->
+    <integer name="reconnect_initial_delay_ms">1000</integer>
+    <integer name="reconnect_max_delay_ms">30000</integer>
+    <integer name="reconnect_max_attempts">10</integer>
+
+    <!-- Cache -->
+    <integer name="cache_max_size_mb">50</integer>
+    <integer name="cache_ttl_hours">24</integer>
+
+    <!-- UI -->
+    <bool name="enable_animations">true</bool>
+    <bool name="enable_haptic_feedback">true</bool>
+    <integer name="animation_duration_ms">300</integer>
+
+    <!-- Profils -->
+    <integer name="max_profiles">100</integer>
+    <integer name="max_controls_per_profile">100</integer>
+    <integer name="max_grid_rows">20</integer>
+    <integer name="max_grid_cols">20</integer>
+
+    <!-- Synchronisation -->
+    <integer name="sync_interval_ms">30000</integer>
+    <bool name="auto_sync_enabled">true</bool>
+
+    <!-- Debug -->
+    <bool name="debug_mode">false</bool>
+    <bool name="enable_debug_logs">false</bool>
+</resources>
+
+
+
+
+

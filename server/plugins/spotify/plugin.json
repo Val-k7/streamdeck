@@ -1,0 +1,93 @@
+{
+  "name": "spotify",
+  "version": "1.0.0",
+  "description": "Plugin Spotify pour Control Deck - Contrôle de la lecture et informations",
+  "author": "Control Deck",
+  "main": "index.js",
+  "actions": {
+    "play_pause": {
+      "description": "Play/Pause la lecture Spotify",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "toggle": {
+            "type": "boolean",
+            "description": "Toggle play/pause"
+          }
+        }
+      }
+    },
+    "next": {
+      "description": "Piste suivante",
+      "payload": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "previous": {
+      "description": "Piste précédente",
+      "payload": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "volume": {
+      "description": "Contrôle le volume Spotify",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "volume": {
+            "type": "number",
+            "description": "Volume entre 0 et 100",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    },
+    "shuffle": {
+      "description": "Active/désactive le mode shuffle",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Activer shuffle"
+          }
+        }
+      }
+    },
+    "repeat": {
+      "description": "Change le mode de répétition",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": ["off", "track", "context"],
+            "description": "Mode de répétition"
+          }
+        }
+      }
+    },
+    "get_info": {
+      "description": "Obtient les informations de la piste actuelle",
+      "payload": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  },
+  "config": {
+    "enabled": true,
+    "useMediaKeys": true,
+    "apiEnabled": false,
+    "clientId": "",
+    "clientSecret": ""
+  }
+}
+
+
+
+
+

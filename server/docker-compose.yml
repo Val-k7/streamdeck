@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  control-deck-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: control-deck-server
+    ports:
+      - "4455:4455"
+    environment:
+      - NODE_ENV=production
+      - PORT=4455
+      - LOG_LEVEL=info
+      - DECK_TOKEN=${DECK_TOKEN:-change-me-please}
+      - HANDSHAKE_SECRET=${HANDSHAKE_SECRET:-change-me-please}
+    volumes:
+      - ./config:/app/config
+      - ./profiles:/app/profiles
+      - ./plugins:/app/plugins
+      - ./logs:/app/logs
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - control-deck-network
+    healthcheck:
+      test: ["CMD", "node", "scripts/health-check.js", "--url=http://localhost:4455"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  control-deck-network:
+    driver: bridge
+
+
+
+
+

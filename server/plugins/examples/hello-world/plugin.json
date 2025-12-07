@@ -1,0 +1,25 @@
+{
+  "name": "hello-world",
+  "version": "1.0.0",
+  "description": "Plugin Hello World - Exemple simple",
+  "main": "index.js",
+  "author": "Control Deck",
+  "license": "MIT",
+  "actions": [
+    {
+      "name": "hello",
+      "description": "Affiche un message Hello World",
+      "parameters": {
+        "name": {
+          "type": "string",
+          "required": false,
+          "description": "Nom à saluer"
+        }
+      }
+    }
+  ],
+  "config": {
+    "enabled": true,
+    "greeting": "Hello"
+  }
+}

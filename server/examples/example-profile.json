@@ -1,0 +1,155 @@
+{
+  "id": "example-streaming",
+  "name": "Streaming Profile",
+  "version": 1,
+  "description": "Example profile for streaming setup",
+  "grid": {
+    "rows": 3,
+    "cols": 5
+  },
+  "controls": [
+    {
+      "id": "control-1",
+      "type": "button",
+      "label": "Start Stream",
+      "position": {
+        "row": 0,
+        "col": 0,
+        "rowSpan": 1,
+        "colSpan": 1
+      },
+      "action": {
+        "type": "obs",
+        "payload": "START_STREAMING"
+      },
+      "style": {
+        "backgroundColor": "#4CAF50",
+        "textColor": "#FFFFFF",
+        "icon": "play_arrow"
+      }
+    },
+    {
+      "id": "control-2",
+      "type": "button",
+      "label": "Stop Stream",
+      "position": {
+        "row": 0,
+        "col": 1,
+        "rowSpan": 1,
+        "colSpan": 1
+      },
+      "action": {
+        "type": "obs",
+        "payload": "STOP_STREAMING"
+      },
+      "style": {
+        "backgroundColor": "#F44336",
+        "textColor": "#FFFFFF",
+        "icon": "stop"
+      }
+    },
+    {
+      "id": "control-3",
+      "type": "button",
+      "label": "Scene 1",
+      "position": {
+        "row": 1,
+        "col": 0,
+        "rowSpan": 1,
+        "colSpan": 1
+      },
+      "action": {
+        "type": "obs",
+        "payload": {
+          "action": "SET_SCENE",
+          "params": {
+            "sceneName": "Scene 1"
+          }
+        }
+      },
+      "style": {
+        "backgroundColor": "#2196F3",
+        "textColor": "#FFFFFF",
+        "icon": "videocam"
+      }
+    },
+    {
+      "id": "control-4",
+      "type": "fader",
+      "label": "Microphone",
+      "position": {
+        "row": 2,
+        "col": 0,
+        "rowSpan": 1,
+        "colSpan": 2
+      },
+      "action": {
+        "type": "audio",
+        "payload": {
+          "action": "SET_VOLUME",
+          "device": "Microphone",
+          "volume": 50
+        }
+      },
+      "style": {
+        "backgroundColor": "#9E9E9E",
+        "textColor": "#FFFFFF"
+      }
+    },
+    {
+      "id": "control-5",
+      "type": "button",
+      "label": "Mute Discord",
+      "position": {
+        "row": 0,
+        "col": 2,
+        "rowSpan": 1,
+        "colSpan": 1
+      },
+      "action": {
+        "type": "plugin",
+        "plugin": "discord",
+        "action": "mute",
+        "payload": {
+          "toggle": true
+        }
+      },
+      "style": {
+        "backgroundColor": "#5865F2",
+        "textColor": "#FFFFFF",
+        "icon": "mic_off"
+      }
+    },
+    {
+      "id": "control-6",
+      "type": "button",
+      "label": "Play/Pause",
+      "position": {
+        "row": 1,
+        "col": 1,
+        "rowSpan": 1,
+        "colSpan": 1
+      },
+      "action": {
+        "type": "plugin",
+        "plugin": "spotify",
+        "action": "play_pause"
+      },
+      "style": {
+        "backgroundColor": "#1DB954",
+        "textColor": "#FFFFFF",
+        "icon": "play_pause"
+      }
+    }
+  ],
+  "metadata": {
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z",
+    "author": "Control Deck Team"
+  }
+}
+
+
+
+
+

@@ -1,0 +1,67 @@
+{
+  "name": "discord",
+  "version": "1.0.0",
+  "description": "Plugin Discord pour Control Deck - Contrôle du chat vocal et Rich Presence",
+  "author": "Control Deck",
+  "main": "index.js",
+  "actions": {
+    "mute": {
+      "description": "Mute/Unmute le microphone Discord",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "toggle": {
+            "type": "boolean",
+            "description": "Toggle mute (si true, inverse l'état actuel)"
+          },
+          "mute": {
+            "type": "boolean",
+            "description": "Mute (true) ou unmute (false)"
+          }
+        }
+      }
+    },
+    "deafen": {
+      "description": "Deafen/Undeafen dans Discord",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "toggle": {
+            "type": "boolean",
+            "description": "Toggle deafen"
+          },
+          "deafen": {
+            "type": "boolean",
+            "description": "Deafen (true) ou undeafen (false)"
+          }
+        }
+      }
+    },
+    "rich_presence": {
+      "description": "Mettre à jour la Rich Presence Discord",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "description": "État de présence"
+          },
+          "details": {
+            "type": "string",
+            "description": "Détails de présence"
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "enabled": true,
+    "discordRpcEnabled": false,
+    "autoConnect": true
+  }
+}
+
+
+
+
+

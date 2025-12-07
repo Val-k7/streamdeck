@@ -1,0 +1,53 @@
+{
+  "name": "obs",
+  "version": "1.0.0",
+  "description": "Contrôle OBS Studio via WebSocket",
+  "main": "index.js",
+  "author": "Control Deck",
+  "license": "MIT",
+  "actions": [
+    { "name": "start_streaming", "description": "Démarre le live" },
+    { "name": "stop_streaming", "description": "Arrête le live" },
+    { "name": "toggle_recording", "description": "Démarre/arrête l'enregistrement" },
+    {
+      "name": "set_scene",
+      "description": "Change de scène",
+      "parameters": {
+        "sceneName": { "type": "string", "required": true }
+      }
+    },
+    {
+      "name": "set_volume",
+      "description": "Volume entrée/sortie",
+      "parameters": {
+        "inputName": { "type": "string", "required": true },
+        "volumeDb": { "type": "number", "required": true }
+      }
+    },
+    {
+      "name": "mute",
+      "description": "Mute/Unmute",
+      "parameters": {
+        "inputName": { "type": "string", "required": true },
+        "mute": { "type": "boolean", "required": false }
+      }
+    },
+    {
+      "name": "advanced",
+      "description": "Actions avancées OBS (voir docs)",
+      "parameters": {
+        "action": { "type": "string", "required": true },
+        "params": { "type": "object", "required": false }
+      }
+    }
+  ],
+  "config": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 4455,
+    "password": "",
+    "autoReconnect": true,
+    "reconnectDelay": 5000
+  }
+}
+

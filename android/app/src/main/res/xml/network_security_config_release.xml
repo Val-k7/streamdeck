@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuration de production : TLS uniquement, pas de cleartext -->
+    <!-- Ce fichier est utilisé pour les builds release -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <!-- Optionnel: certificate pinning pour production -->
+            <!-- Pour activer le certificate pinning, décommentez et configurez :
+            <certificates src="user" />
+            -->
+        </trust-anchors>
+    </base-config>
+
+    <!-- En production, tous les domaines doivent utiliser TLS -->
+    <!-- Les connexions HTTP non sécurisées seront bloquées -->
+    <!-- Pour autoriser des domaines spécifiques en TLS, ajoutez :
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">example.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    -->
+</network-security-config>

@@ -1,0 +1,31 @@
+{
+  "name": "plugin-template",
+  "version": "1.0.0",
+  "description": "Template de plugin pour Control Deck",
+  "main": "index.js",
+  "author": "Control Deck",
+  "license": "MIT",
+  "actions": [
+    {
+      "name": "example",
+      "description": "Exemple d'action",
+      "parameters": {
+        "message": {
+          "type": "string",
+          "required": true,
+          "description": "Message à afficher"
+        }
+      }
+    }
+  ],
+  "config": {
+    "enabled": true,
+    "setting1": "default_value",
+    "setting2": 42
+  }
+}
+
+
+
+
+

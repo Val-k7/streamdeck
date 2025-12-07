@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuration de debug : autoriser cleartext pour les adresses IP locales -->
+    <!-- NOTE: En production (release build), ce fichier ne sera pas utilisé -->
+    <!-- Le fichier network_security_config_release.xml sera utilisé à la place -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Configuration spécifique pour les domaines locaux (debug uniquement) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <!-- Autoriser les adresses IP privées (192.168.x.x, 10.x.x.x, 172.16-31.x.x) -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">172.16.0.0</domain>
+    </domain-config>
+</network-security-config>
+
+
+
+
+
