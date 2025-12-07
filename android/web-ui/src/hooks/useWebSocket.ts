@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
 import { logger } from "@/lib/logger";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ConnectionStatus = "online" | "offline" | "connecting";
 
@@ -57,7 +57,9 @@ export interface UseWebSocketReturn {
   status: ConnectionStatus;
   connect: (config: WebSocketConfig) => void;
   disconnect: () => void;
-  sendControl: (payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">) => Promise<void>;
+  sendControl: (
+    payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">
+  ) => Promise<void>;
   selectProfile: (profileId: string, resetState?: boolean) => Promise<void>;
   onAck: (callback: (ack: AckPayload) => void) => void;
   onProfileAck: (callback: (ack: ProfileAckPayload) => void) => void;
@@ -83,13 +85,30 @@ export const useWebSocket = (): UseWebSocketReturn => {
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const configRef = useRef<WebSocketConfig | null>(null);
-  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const reconnectAttemptsRef = useRef(0);
-  const pendingMessagesRef = useRef<Map<string, { resolve: () => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }>>(new Map());
+  const pendingMessagesRef = useRef<
+    Map<
+      string,
+      {
+        resolve: () => void;
+        reject: (error: Error) => void;
+        timeout: ReturnType<typeof setTimeout>;
+      }
+    >
+  >(new Map());
   const ackCallbacksRef = useRef<Set<(ack: AckPayload) => void>>(new Set());
-  const profileAckCallbacksRef = useRef<Set<(ack: ProfileAckPayload) => void>>(new Set());
-  const controlStateCallbacksRef = useRef<Set<(state: ControlStatePayload) => void>>(new Set());
+  const profileAckCallbacksRef = useRef<Set<(ack: ProfileAckPayload) => void>>(
+    new Set()
+  );
+  const controlStateCallbacksRef = useRef<
+    Set<(state: ControlStatePayload) => void>
+  >(new Set());
   const statusCheckIntervalRef = useRef<number | null>(null);
 
   // Vérifier le statut de connexion périodiquement si on est sur Android
@@ -148,119 +167,142 @@ export const useWebSocket = (): UseWebSocketReturn => {
     }, interval);
   }, []);
 
-  const connect = useCallback((config: WebSocketConfig) => {
-    // Utiliser l'interface Android si disponible
-    if (window.Android) {
-      try {
-        // Extraire l'IP et le port de l'URL
-        const url = new URL(config.url);
-        const serverIp = url.hostname;
-        const serverPort = parseInt(url.port || (url.protocol === "wss:" ? "443" : "80"), 10);
-        const useTls = url.protocol === "wss:";
-
-        logger.debug("useWebSocket: connect via Android bridge", { url: config.url, serverIp, serverPort, useTls });
-        window.Android.connect(serverIp, serverPort, useTls);
-        setStatus("connecting");
-        setError(null);
-        reconnectAttemptsRef.current = 0;
-        return;
-      } catch (e) {
-        logger.error("useWebSocket: failed to connect via Android bridge", e);
-        setError(e instanceof Error ? e.message : "Failed to connect");
-        setStatus("offline");
-        return;
-      }
-    }
-
-    // Fallback sur WebSocket standard pour le web
-    cleanup();
-    configRef.current = config;
-    setStatus("connecting");
-    setError(null);
-    reconnectAttemptsRef.current = 0;
-
-    try {
-      logger.debug("useWebSocket: connect via WebSocket", config.url);
-      const ws = new WebSocket(config.url);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setStatus("online");
-        setError(null);
-        reconnectAttemptsRef.current = 0;
-        startHeartbeat();
-      };
-
-      ws.onmessage = (event) => {
+  const connect = useCallback(
+    (config: WebSocketConfig) => {
+      // Utiliser l'interface Android si disponible
+      if (window.Android) {
         try {
-          const data = JSON.parse(event.data);
+          // Extraire l'IP et le port de l'URL
+          const url = new URL(config.url);
+          const serverIp = url.hostname;
+          const serverPort = parseInt(
+            url.port || (url.protocol === "wss:" ? "443" : "80"),
+            10
+          );
+          const useTls = url.protocol === "wss:";
 
-          // Gérer les ACK
-          if (data.type === "ack") {
-            if (data.kind === "profile:select:ack") {
-              profileAckCallbacksRef.current.forEach((callback) => callback(data as ProfileAckPayload));
-            } else {
-              ackCallbacksRef.current.forEach((callback) => callback(data as AckPayload));
-            }
+          logger.debug("useWebSocket: connect via Android bridge", {
+            url: config.url,
+            serverIp,
+            serverPort,
+            useTls,
+          });
+          window.Android.connect(serverIp, serverPort, useTls);
+          setStatus("connecting");
+          setError(null);
+          reconnectAttemptsRef.current = 0;
+          return;
+        } catch (e) {
+          logger.error("useWebSocket: failed to connect via Android bridge", e);
+          setError(e instanceof Error ? e.message : "Failed to connect");
+          setStatus("offline");
+          return;
+        }
+      }
 
-            // Résoudre les messages en attente
-            if (data.messageId) {
-              const pending = pendingMessagesRef.current.get(data.messageId);
-              if (pending) {
-                clearTimeout(pending.timeout);
-                if (data.status === "ok") {
-                  pending.resolve();
-                } else {
-                  pending.reject(new Error(data.error || "Action failed"));
+      // Fallback sur WebSocket standard pour le web
+      cleanup();
+      configRef.current = config;
+      setStatus("connecting");
+      setError(null);
+      reconnectAttemptsRef.current = 0;
+
+      try {
+        logger.debug("useWebSocket: connect via WebSocket", config.url);
+        const ws = new WebSocket(config.url);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          setStatus("online");
+          setError(null);
+          reconnectAttemptsRef.current = 0;
+          startHeartbeat();
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+
+            // Gérer les ACK
+            if (data.type === "ack") {
+              if (data.kind === "profile:select:ack") {
+                profileAckCallbacksRef.current.forEach((callback) =>
+                  callback(data as ProfileAckPayload)
+                );
+              } else {
+                ackCallbacksRef.current.forEach((callback) =>
+                  callback(data as AckPayload)
+                );
+              }
+
+              // Résoudre les messages en attente
+              if (data.messageId) {
+                const pending = pendingMessagesRef.current.get(data.messageId);
+                if (pending) {
+                  clearTimeout(pending.timeout);
+                  if (data.status === "ok") {
+                    pending.resolve();
+                  } else {
+                    pending.reject(new Error(data.error || "Action failed"));
+                  }
+                  pendingMessagesRef.current.delete(data.messageId);
                 }
-                pendingMessagesRef.current.delete(data.messageId);
               }
             }
-          }
 
-          // Gérer les mises à jour d'état des contrôles
-          if (data.type === "control:state") {
-            controlStateCallbacksRef.current.forEach((callback) => callback(data as ControlStatePayload));
-          }
-        } catch (e) {
-          logger.error("Failed to parse WebSocket message:", e);
-        }
-      };
-
-      ws.onerror = (event) => {
-        logger.error("WebSocket error:", event);
-        setError("Connection error");
-        // Ne pas fermer la connexion ici, laisser onclose gérer
-      };
-
-      ws.onclose = (event) => {
-        setStatus("offline");
-        wsRef.current = null;
-
-        if (heartbeatIntervalRef.current) {
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-        }
-
-        // Tentative de reconnexion automatique
-        if (configRef.current && reconnectAttemptsRef.current < (configRef.current.maxReconnectAttempts || 6)) {
-          const delay = (configRef.current.reconnectDelay || 1000) * Math.pow(2, reconnectAttemptsRef.current);
-          reconnectAttemptsRef.current++;
-
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (configRef.current) {
-              connect(configRef.current);
+            // Gérer les mises à jour d'état des contrôles
+            if (data.type === "control:state") {
+              controlStateCallbacksRef.current.forEach((callback) =>
+                callback(data as ControlStatePayload)
+              );
             }
-          }, delay);
-        } else {
-          setError("Connection lost. Please reconnect manually.");
-        }
-      };
-    } catch (e) {
-      setStatus("offline");
-      setError(e instanceof Error ? e.message : "Failed to connect");
-    }
-  }, [cleanup, startHeartbeat]);
+          } catch (e) {
+            logger.error("Failed to parse WebSocket message:", e);
+          }
+        };
+
+        ws.onerror = (event) => {
+          logger.error("WebSocket error:", event);
+          setError("Connection error");
+          // Ne pas fermer la connexion ici, laisser onclose gérer
+        };
+
+        ws.onclose = (event) => {
+          setStatus("offline");
+          wsRef.current = null;
+
+          if (heartbeatIntervalRef.current) {
+            clearInterval(heartbeatIntervalRef.current);
+            heartbeatIntervalRef.current = null;
+          }
+
+          // Tentative de reconnexion automatique
+          if (
+            configRef.current &&
+            reconnectAttemptsRef.current <
+              (configRef.current.maxReconnectAttempts || 6)
+          ) {
+            const delay =
+              (configRef.current.reconnectDelay || 1000) *
+              Math.pow(2, reconnectAttemptsRef.current);
+            reconnectAttemptsRef.current++;
+
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (configRef.current) {
+                connect(configRef.current);
+              }
+            }, delay);
+          } else {
+            setError("Connection lost. Please reconnect manually.");
+          }
+        };
+      } catch (e) {
+        setStatus("offline");
+        setError(e instanceof Error ? e.message : "Failed to connect");
+      }
+    },
+    [cleanup, startHeartbeat]
+  );
 
   const disconnect = useCallback(() => {
     if (window.Android) {
@@ -276,71 +318,81 @@ export const useWebSocket = (): UseWebSocketReturn => {
     reconnectAttemptsRef.current = 0;
   }, [cleanup]);
 
-  const sendControl = useCallback(async (payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">) => {
-    if (window.Android) {
-      // Utiliser l'interface Android
-      // Le payload peut contenir meta comme propriété séparée
-      const meta = payload.meta;
-      const metaJson = meta ? JSON.stringify(meta) : undefined;
-      window.Android.sendControl(payload.controlId, payload.value, metaJson);
-      return Promise.resolve();
-    }
+  const sendControl = useCallback(
+    async (payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">) => {
+      if (window.Android) {
+        // Utiliser l'interface Android
+        // Le payload peut contenir meta comme propriété séparée
+        const meta = payload.meta;
+        const metaJson = meta ? JSON.stringify(meta) : undefined;
+        window.Android.sendControl(payload.controlId, payload.value, metaJson);
+        return Promise.resolve();
+      }
 
-    // Fallback sur WebSocket standard
-    if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      throw new Error("WebSocket is not connected");
-    }
+      // Fallback sur WebSocket standard
+      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+        throw new Error("WebSocket is not connected");
+      }
 
-    const messageId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const fullPayload: ControlPayload = {
-      kind: "control",
-      ...payload,
-      messageId,
-      sentAt: Date.now(),
-    };
+      const messageId = `${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      const fullPayload: ControlPayload = {
+        kind: "control",
+        ...payload,
+        messageId,
+        sentAt: Date.now(),
+      };
 
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        pendingMessagesRef.current.delete(messageId);
-        reject(new Error("Action timeout"));
-      }, 5000);
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          pendingMessagesRef.current.delete(messageId);
+          reject(new Error("Action timeout"));
+        }, 5000);
 
-      pendingMessagesRef.current.set(messageId, { resolve, reject, timeout });
-      wsRef.current?.send(JSON.stringify(fullPayload));
-    });
-  }, []);
+        pendingMessagesRef.current.set(messageId, { resolve, reject, timeout });
+        wsRef.current?.send(JSON.stringify(fullPayload));
+      });
+    },
+    []
+  );
 
-  const selectProfile = useCallback(async (profileId: string, resetState = true) => {
-    if (window.Android) {
-      // Utiliser l'interface Android
-      window.Android.selectProfile(profileId);
-      return Promise.resolve();
-    }
+  const selectProfile = useCallback(
+    async (profileId: string, resetState = true) => {
+      if (window.Android) {
+        // Utiliser l'interface Android
+        window.Android.selectProfile(profileId);
+        return Promise.resolve();
+      }
 
-    // Fallback sur WebSocket standard
-    if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      throw new Error("WebSocket is not connected");
-    }
+      // Fallback sur WebSocket standard
+      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+        throw new Error("WebSocket is not connected");
+      }
 
-    const messageId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const payload: ProfileSelectPayload = {
-      kind: "profile:select",
-      profileId,
-      messageId,
-      sentAt: Date.now(),
-      resetState,
-    };
+      const messageId = `${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      const payload: ProfileSelectPayload = {
+        kind: "profile:select",
+        profileId,
+        messageId,
+        sentAt: Date.now(),
+        resetState,
+      };
 
-    return new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        pendingMessagesRef.current.delete(messageId);
-        reject(new Error("Profile selection timeout"));
-      }, 5000);
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          pendingMessagesRef.current.delete(messageId);
+          reject(new Error("Profile selection timeout"));
+        }, 5000);
 
-      pendingMessagesRef.current.set(messageId, { resolve, reject, timeout });
-      wsRef.current?.send(JSON.stringify(payload));
-    });
-  }, []);
+        pendingMessagesRef.current.set(messageId, { resolve, reject, timeout });
+        wsRef.current?.send(JSON.stringify(payload));
+      });
+    },
+    []
+  );
 
   const onAck = useCallback((callback: (ack: AckPayload) => void) => {
     ackCallbacksRef.current.add(callback);
@@ -349,19 +401,25 @@ export const useWebSocket = (): UseWebSocketReturn => {
     };
   }, []);
 
-  const onProfileAck = useCallback((callback: (ack: ProfileAckPayload) => void) => {
-    profileAckCallbacksRef.current.add(callback);
-    return () => {
-      profileAckCallbacksRef.current.delete(callback);
-    };
-  }, []);
+  const onProfileAck = useCallback(
+    (callback: (ack: ProfileAckPayload) => void) => {
+      profileAckCallbacksRef.current.add(callback);
+      return () => {
+        profileAckCallbacksRef.current.delete(callback);
+      };
+    },
+    []
+  );
 
-  const onControlState = useCallback((callback: (state: ControlStatePayload) => void) => {
-    controlStateCallbacksRef.current.add(callback);
-    return () => {
-      controlStateCallbacksRef.current.delete(callback);
-    };
-  }, []);
+  const onControlState = useCallback(
+    (callback: (state: ControlStatePayload) => void) => {
+      controlStateCallbacksRef.current.add(callback);
+      return () => {
+        controlStateCallbacksRef.current.delete(callback);
+      };
+    },
+    []
+  );
 
   useEffect(() => {
     return () => {

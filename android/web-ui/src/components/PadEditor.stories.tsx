@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/react";
 import { PadConfig } from "@/hooks/useDeckStorage";
+import type { Meta, StoryObj } from "@storybook/react";
 import { PadEditor } from "../components/PadEditor";
 
 // Type helper pour onSave

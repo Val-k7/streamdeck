@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface PadConfig {
   id: string;
@@ -69,49 +69,64 @@ export const useDeckStorage = () => {
   }, []);
 
   // Update a single pad in a profile
-  const updatePad = useCallback((profileId: string, padId: string, updates: Partial<PadConfig>) => {
-    setDecks((prev) => {
-      const profilePads = prev[profileId] || [];
-      const newPads = profilePads.map((pad) =>
-        pad.id === padId ? { ...pad, ...updates } : pad
-      );
-      const newDecks = { ...prev, [profileId]: newPads };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newDecks));
-      return newDecks;
-    });
-  }, []);
+  const updatePad = useCallback(
+    (profileId: string, padId: string, updates: Partial<PadConfig>) => {
+      setDecks((prev) => {
+        const profilePads = prev[profileId] || [];
+        const newPads = profilePads.map((pad) =>
+          pad.id === padId ? { ...pad, ...updates } : pad
+        );
+        const newDecks = { ...prev, [profileId]: newPads };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newDecks));
+        return newDecks;
+      });
+    },
+    []
+  );
 
   // Update pad state
-  const updatePadState = useCallback((profileId: string, padId: string, isActive: boolean) => {
-    setStates((prev) => {
-      const profileState = prev[profileId] || { padStates: {}, faderValues: {} };
-      const newStates = {
-        ...prev,
-        [profileId]: {
-          ...profileState,
-          padStates: { ...profileState.padStates, [padId]: isActive },
-        },
-      };
-      localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(newStates));
-      return newStates;
-    });
-  }, []);
+  const updatePadState = useCallback(
+    (profileId: string, padId: string, isActive: boolean) => {
+      setStates((prev) => {
+        const profileState = prev[profileId] || {
+          padStates: {},
+          faderValues: {},
+        };
+        const newStates = {
+          ...prev,
+          [profileId]: {
+            ...profileState,
+            padStates: { ...profileState.padStates, [padId]: isActive },
+          },
+        };
+        localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(newStates));
+        return newStates;
+      });
+    },
+    []
+  );
 
   // Update fader value
-  const updateFaderValue = useCallback((profileId: string, padId: string, value: number) => {
-    setStates((prev) => {
-      const profileState = prev[profileId] || { padStates: {}, faderValues: {} };
-      const newStates = {
-        ...prev,
-        [profileId]: {
-          ...profileState,
-          faderValues: { ...profileState.faderValues, [padId]: value },
-        },
-      };
-      localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(newStates));
-      return newStates;
-    });
-  }, []);
+  const updateFaderValue = useCallback(
+    (profileId: string, padId: string, value: number) => {
+      setStates((prev) => {
+        const profileState = prev[profileId] || {
+          padStates: {},
+          faderValues: {},
+        };
+        const newStates = {
+          ...prev,
+          [profileId]: {
+            ...profileState,
+            faderValues: { ...profileState.faderValues, [padId]: value },
+          },
+        };
+        localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(newStates));
+        return newStates;
+      });
+    },
+    []
+  );
 
   return {
     decks,

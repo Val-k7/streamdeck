@@ -1,44 +1,44 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '../../test/utils/test-utils'
-import DeckGrid from '../DeckGrid'
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "../../test/utils/test-utils";
+import DeckGrid from "../DeckGrid";
 
 const mockPads = [
   {
-    id: 'pad-1',
-    type: 'button' as const,
-    size: '1x1' as const,
-    label: 'Button 1',
-    iconName: 'Play',
-    color: 'primary' as const,
+    id: "pad-1",
+    type: "button" as const,
+    size: "1x1" as const,
+    label: "Button 1",
+    iconName: "Play",
+    color: "primary" as const,
   },
   {
-    id: 'pad-2',
-    type: 'button' as const,
-    size: '1x1' as const,
-    label: 'Button 2',
-    iconName: 'Square',
-    color: 'accent' as const,
+    id: "pad-2",
+    type: "button" as const,
+    size: "1x1" as const,
+    label: "Button 2",
+    iconName: "Square",
+    color: "accent" as const,
   },
-]
+];
 
 // Mock ControlPad
-vi.mock('../ControlPad', () => ({
+vi.mock("../ControlPad", () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ControlPad: ({ label, onPress }: any) => (
     <button onClick={onPress} data-testid={`pad-${label}`}>
       {label}
     </button>
   ),
-}))
+}));
 
 // Mock PadEditor
-vi.mock('../PadEditor', () => ({
+vi.mock("../PadEditor", () => ({
   PadEditor: () => <div>Pad Editor</div>,
   getIconByName: () => null,
-}))
+}));
 
-describe('DeckGrid', () => {
-  it('should render grid with pads', () => {
+describe("DeckGrid", () => {
+  it("should render grid with pads", () => {
     render(
       <DeckGrid
         profileName="test"
@@ -48,13 +48,13 @@ describe('DeckGrid', () => {
         onPadValueChange={() => {}}
         onPadEdit={() => {}}
       />
-    )
+    );
 
-    expect(screen.getByTestId('pad-Button 1')).toBeInTheDocument()
-    expect(screen.getByTestId('pad-Button 2')).toBeInTheDocument()
-  })
+    expect(screen.getByTestId("pad-Button 1")).toBeInTheDocument();
+    expect(screen.getByTestId("pad-Button 2")).toBeInTheDocument();
+  });
 
-  it('should render empty grid when no pads', () => {
+  it("should render empty grid when no pads", () => {
     render(
       <DeckGrid
         profileName="test"
@@ -64,14 +64,14 @@ describe('DeckGrid', () => {
         onPadValueChange={() => {}}
         onPadEdit={() => {}}
       />
-    )
+    );
 
     // Grid should still render
-    expect(screen.queryByTestId('pad-Button 1')).not.toBeInTheDocument()
-  })
+    expect(screen.queryByTestId("pad-Button 1")).not.toBeInTheDocument();
+  });
 
-  it('should call onPadPress when pad is clicked', () => {
-    const onPadPress = vi.fn()
+  it("should call onPadPress when pad is clicked", () => {
+    const onPadPress = vi.fn();
     render(
       <DeckGrid
         profileName="test"
@@ -81,12 +81,11 @@ describe('DeckGrid', () => {
         onPadValueChange={() => {}}
         onPadEdit={() => {}}
       />
-    )
+    );
 
-    const button = screen.getByTestId('pad-Button 1')
-    button.click()
+    const button = screen.getByTestId("pad-Button 1");
+    button.click();
 
-    expect(onPadPress).toHaveBeenCalledWith(mockPads[0].id)
-  })
-})
-
+    expect(onPadPress).toHaveBeenCalledWith(mockPads[0].id);
+  });
+});

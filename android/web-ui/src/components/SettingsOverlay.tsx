@@ -182,25 +182,30 @@ export const SettingsOverlay = ({
   // Ne rien afficher si fermé
   if (!open) return null;
 
-  console.log("[SettingsOverlay] Rendering modal, open:", open, "activeTab:", activeTab);
+  console.log(
+    "[SettingsOverlay] Rendering modal, open:",
+    open,
+    "activeTab:",
+    activeTab
+  );
 
   // Utiliser une approche sans transform pour Android WebView
   // Le conteneur principal utilise flexbox pour centrer le modal
   const modalContent = (
     <div
       style={{
-        position: 'fixed',
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
-        zIndex: 9999
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.85)",
+        zIndex: 9999,
       }}
       onClick={(e) => {
         // Fermer seulement si on clique sur le backdrop (pas sur le modal)
@@ -210,249 +215,280 @@ export const SettingsOverlay = ({
       }}
     >
       {/* Modal Container - centré via flexbox parent */}
-      <div 
-        style={{ 
-          width: '90%',
-          maxWidth: '672px',
-          height: '500px',
-          backgroundColor: '#1a1d24',
-          border: '2px solid #00d4ff',
-          borderRadius: '8px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          flexDirection: 'column' as const,
-          overflow: 'hidden'
+      <div
+        style={{
+          width: "90%",
+          maxWidth: "672px",
+          height: "500px",
+          backgroundColor: "#1a1d24",
+          border: "2px solid #00d4ff",
+          borderRadius: "8px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          flexDirection: "column" as const,
+          overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ 
-          flexShrink: 0,
-          padding: '12px 16px',
-          borderBottom: '1px solid #333', 
-          backgroundColor: '#1e2128' 
-        }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-              <div style={{ minWidth: 0 }}>
-                <h2 style={{ color: '#ffffff', fontSize: '18px', fontWeight: 600, margin: 0 }}>
-                  Control Deck Settings
-                </h2>
-                <p style={{ color: '#888888', fontSize: '14px', marginTop: '4px', margin: 0 }}>
-                  Manage your server connection and settings
-                </p>
-              </div>
-              <button
-                onClick={() => onOpenChange(false)}
-                style={{ 
-                  flexShrink: 0, 
-                  padding: '4px', 
-                  background: 'transparent',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  color: '#ffffff'
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "12px 16px",
+            borderBottom: "1px solid #333",
+            backgroundColor: "#1e2128",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: "16px",
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <h2
+                style={{
+                  color: "#ffffff",
+                  fontSize: "18px",
+                  fontWeight: 600,
+                  margin: 0,
                 }}
               >
-                <X size={20} />
-              </button>
+                Control Deck Settings
+              </h2>
+              <p
+                style={{
+                  color: "#888888",
+                  fontSize: "14px",
+                  marginTop: "4px",
+                  margin: 0,
+                }}
+              >
+                Manage your server connection and settings
+              </p>
             </div>
-          </div>
-
-          {/* Tabs */}
-          <div style={{ 
-            flexShrink: 0, 
-            display: 'flex', 
-            overflowX: 'auto',
-            borderBottom: '1px solid #333', 
-            backgroundColor: '#15181e' 
-          }}>
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                style={{ 
-                  flexShrink: 0,
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  fontFamily: 'monospace',
-                  border: 'none',
-                  borderBottom: activeTab === tab.value ? '2px solid #00d4ff' : '2px solid transparent',
-                  color: activeTab === tab.value ? '#ffffff' : '#888888',
-                  backgroundColor: activeTab === tab.value ? 'rgba(0,212,255,0.1)' : 'transparent',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Content */}
-          <div style={{ 
-            flex: 1, 
-            overflowY: 'auto', 
-            padding: '16px',
-            backgroundColor: '#1a1d24', 
-            color: '#ffffff' 
-          }}>
-            {activeTab === "discovery" && <DiscoveryTab />}{" "}
-            {activeTab === "connection" && (
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="serverIp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-mono text-sm">
-                          Server Host / IP
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="my.server.com or 203.0.113.10"
-                            className="bg-secondary border-border text-mono"
-                            autoComplete="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="serverPort"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-mono text-sm">
-                          Server Port
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            placeholder="4455"
-                            className="bg-secondary border-border text-mono"
-                            autoComplete="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="useTls"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            className="rounded border-border"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-mono text-sm cursor-pointer">
-                          Use TLS (WSS)
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex gap-1.5 xs:gap-2">
-                    {ws.status === "online" ? (
-                      <Button
-                        type="button"
-                        onClick={handleDisconnect}
-                        className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs xs:text-sm"
-                      >
-                        Disconnect
-                      </Button>
-                    ) : (
-                      <Button
-                        type="submit"
-                        disabled={
-                          ws.status === "connecting" || !form.formState.isValid
-                        }
-                        className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs xs:text-sm"
-                      >
-                        {ws.status === "connecting"
-                          ? "Connecting..."
-                          : "Connect"}
-                      </Button>
-                    )}
-                  </div>
-                  {ws.status === "online" && (
-                    <div className="text-[10px] xs:text-xs text-mono text-muted-foreground text-center">
-                      Connected to {form.watch("serverIp")}:
-                      {form.watch("serverPort")}
-                    </div>
-                  )}
-                  {ws.error && (
-                    <div className="text-[10px] xs:text-xs text-mono text-destructive text-center">
-                      {ws.error}
-                    </div>
-                  )}
-                </form>
-              </Form>
-            )}
-            {activeTab === "profiles" && (
-              <>
-                {profiles.loading ? (
-                  <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
-                    Loading profiles...
-                  </div>
-                ) : profiles.error ? (
-                  <div className="text-xs xs:text-sm text-destructive text-mono text-center py-8">
-                    {profiles.error}
-                  </div>
-                ) : profiles.profiles.length === 0 ? (
-                  <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
-                    No profiles available
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label className="text-mono text-xs xs:text-sm">
-                      Select Profile
-                    </Label>
-                    <Select
-                      value={profiles.selectedProfile?.id || ""}
-                      onValueChange={handleProfileSelect}
-                    >
-                      <SelectTrigger className="bg-secondary border-border text-mono">
-                        <SelectValue placeholder="Select a profile" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {profiles.profiles.map((profile) => (
-                          <SelectItem key={profile.id} value={profile.id}>
-                            {profile.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {profiles.selectedProfile && (
-                      <div className="text-[10px] xs:text-xs text-mono text-muted-foreground mt-2">
-                        Grid: {profiles.selectedProfile.cols}x
-                        {profiles.selectedProfile.rows} | Controls:{" "}
-                        {profiles.selectedProfile.controls.length}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {activeTab === "plugins" && (
-              <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
-                Plugin configuration coming soon
-              </div>
-            )}
+            <button
+              onClick={() => onOpenChange(false)}
+              style={{
+                flexShrink: 0,
+                padding: "4px",
+                background: "transparent",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                color: "#ffffff",
+              }}
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div
+          style={{
+            flexShrink: 0,
+            display: "flex",
+            overflowX: "auto",
+            borderBottom: "1px solid #333",
+            backgroundColor: "#15181e",
+          }}
+        >
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              style={{
+                flexShrink: 0,
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 500,
+                fontFamily: "monospace",
+                border: "none",
+                borderBottom:
+                  activeTab === tab.value
+                    ? "2px solid #00d4ff"
+                    : "2px solid transparent",
+                color: activeTab === tab.value ? "#ffffff" : "#888888",
+                backgroundColor:
+                  activeTab === tab.value
+                    ? "rgba(0,212,255,0.1)"
+                    : "transparent",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "16px",
+            backgroundColor: "#1a1d24",
+            color: "#ffffff",
+          }}
+        >
+          {activeTab === "discovery" && <DiscoveryTab />}{" "}
+          {activeTab === "connection" && (
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="serverIp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-mono text-sm">
+                        Server Host / IP
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="my.server.com or 203.0.113.10"
+                          className="bg-secondary border-border text-mono"
+                          autoComplete="off"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="serverPort"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-mono text-sm">
+                        Server Port
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="4455"
+                          className="bg-secondary border-border text-mono"
+                          autoComplete="off"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="useTls"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="rounded border-border"
+                        />
+                      </FormControl>
+                      <FormLabel className="text-mono text-sm cursor-pointer">
+                        Use TLS (WSS)
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-1.5 xs:gap-2">
+                  {ws.status === "online" ? (
+                    <Button
+                      type="button"
+                      onClick={handleDisconnect}
+                      className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs xs:text-sm"
+                    >
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={
+                        ws.status === "connecting" || !form.formState.isValid
+                      }
+                      className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 text-xs xs:text-sm"
+                    >
+                      {ws.status === "connecting" ? "Connecting..." : "Connect"}
+                    </Button>
+                  )}
+                </div>
+                {ws.status === "online" && (
+                  <div className="text-[10px] xs:text-xs text-mono text-muted-foreground text-center">
+                    Connected to {form.watch("serverIp")}:
+                    {form.watch("serverPort")}
+                  </div>
+                )}
+                {ws.error && (
+                  <div className="text-[10px] xs:text-xs text-mono text-destructive text-center">
+                    {ws.error}
+                  </div>
+                )}
+              </form>
+            </Form>
+          )}
+          {activeTab === "profiles" && (
+            <>
+              {profiles.loading ? (
+                <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
+                  Loading profiles...
+                </div>
+              ) : profiles.error ? (
+                <div className="text-xs xs:text-sm text-destructive text-mono text-center py-8">
+                  {profiles.error}
+                </div>
+              ) : profiles.profiles.length === 0 ? (
+                <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
+                  No profiles available
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label className="text-mono text-xs xs:text-sm">
+                    Select Profile
+                  </Label>
+                  <Select
+                    value={profiles.selectedProfile?.id || ""}
+                    onValueChange={handleProfileSelect}
+                  >
+                    <SelectTrigger className="bg-secondary border-border text-mono">
+                      <SelectValue placeholder="Select a profile" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.profiles.map((profile) => (
+                        <SelectItem key={profile.id} value={profile.id}>
+                          {profile.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {profiles.selectedProfile && (
+                    <div className="text-[10px] xs:text-xs text-mono text-muted-foreground mt-2">
+                      Grid: {profiles.selectedProfile.cols}x
+                      {profiles.selectedProfile.rows} | Controls:{" "}
+                      {profiles.selectedProfile.controls.length}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          {activeTab === "plugins" && (
+            <div className="text-xs xs:text-sm text-muted-foreground text-mono text-center py-8">
+              Plugin configuration coming soon
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 

@@ -1,51 +1,49 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook } from '@testing-library/react'
-import { useIsMobile } from '../use-mobile'
+import { renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useIsMobile } from "../use-mobile";
 
-describe('useIsMobile', () => {
-  const originalMatchMedia = window.matchMedia
+describe("useIsMobile", () => {
+  const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
-    window.matchMedia = vi.fn()
-  })
+    window.matchMedia = vi.fn();
+  });
 
   afterEach(() => {
-    window.matchMedia = originalMatchMedia
-  })
+    window.matchMedia = originalMatchMedia;
+  });
 
-  it('should return true for mobile screen', () => {
+  it("should return true for mobile screen", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window.matchMedia as any).mockReturnValue({
+    (window.matchMedia as any).mockReturnValue({
       matches: true,
-      media: '(max-width: 768px)',
+      media: "(max-width: 768px)",
       onchange: null,
       addListener: vi.fn(),
       removeListener: vi.fn(),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
-    })
+    });
 
-    const { result } = renderHook(() => useIsMobile())
-    expect(result.current).toBe(true)
-  })
+    const { result } = renderHook(() => useIsMobile());
+    expect(result.current).toBe(true);
+  });
 
-  it('should return false for desktop screen', () => {
+  it("should return false for desktop screen", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window.matchMedia as any).mockReturnValue({
+    (window.matchMedia as any).mockReturnValue({
       matches: false,
-      media: '(max-width: 768px)',
+      media: "(max-width: 768px)",
       onchange: null,
       addListener: vi.fn(),
       removeListener: vi.fn(),
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
-    })
+    });
 
-    const { result } = renderHook(() => useIsMobile())
-    expect(result.current).toBe(false)
-  })
-})
-
-
+    const { result } = renderHook(() => useIsMobile());
+    expect(result.current).toBe(false);
+  });
+});

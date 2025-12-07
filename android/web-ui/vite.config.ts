@@ -15,19 +15,19 @@ const fixAndroidAssetsPlugin = {
     html = html
       .replace(/\s+crossorigin(?=\s|>)/g, "")
       .replace(/\s+crossorigin$/g, "");
-    
+
     // Réordonner : mettre les <link rel="stylesheet"> AVANT les <script>
     // Cela force le navigateur à charger le CSS avant d'exécuter le JS
     const stylesheetMatch = html.match(/<link\s+rel="stylesheet"[^>]*>/g);
     const scriptMatch = html.match(/<script\s+type="module"[^>]*><\/script>/g);
-    
+
     if (stylesheetMatch && scriptMatch) {
       // Supprimer le stylesheet de sa position actuelle
-      html = html.replace(/<link\s+rel="stylesheet"[^>]*>\s*/g, '');
+      html = html.replace(/<link\s+rel="stylesheet"[^>]*>\s*/g, "");
       // L'insérer avant le premier script
       html = html.replace(
         scriptMatch[0],
-        stylesheetMatch.join('\n    ') + '\n    ' + scriptMatch[0]
+        stylesheetMatch.join("\n    ") + "\n    " + scriptMatch[0]
       );
     }
     return html;
@@ -71,9 +71,11 @@ export default defineConfig(({ mode }) => {
       // Augmenter la limite d'avertissement de taille de chunk
       chunkSizeWarningLimit: 1000,
     },
-    plugins: [fixAndroidAssetsPlugin, react(), mode === "development" && componentTagger()].filter(
-      Boolean
-    ),
+    plugins: [
+      fixAndroidAssetsPlugin,
+      react(),
+      mode === "development" && componentTagger(),
+    ].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

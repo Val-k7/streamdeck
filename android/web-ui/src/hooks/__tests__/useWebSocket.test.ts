@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
-import useWebSocket from '../useWebSocket'
+import { renderHook, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import useWebSocket from "../useWebSocket";
 
 // Mock WebSocket
 const mockWebSocket = {
@@ -13,55 +13,53 @@ const mockWebSocket = {
   OPEN: 1,
   CLOSING: 2,
   CLOSED: 3,
-}
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-global.WebSocket = vi.fn(() => mockWebSocket as any) as any
+global.WebSocket = vi.fn(() => mockWebSocket as any) as any;
 
-describe('useWebSocket', () => {
+describe("useWebSocket", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   afterEach(() => {
-    vi.restoreAllMocks()
-  })
+    vi.restoreAllMocks();
+  });
 
-  it('should initialize with disconnected state', () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:4455/ws'))
-    
-    expect(result.current.isConnected).toBe(false)
-    expect(result.current.connectionState).toBe('disconnected')
-  })
+  it("should initialize with disconnected state", () => {
+    const { result } = renderHook(() => useWebSocket("ws://localhost:4455/ws"));
 
-  it('should connect to WebSocket', async () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:4455/ws'))
-    
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.connectionState).toBe("disconnected");
+  });
+
+  it("should connect to WebSocket", async () => {
+    const { result } = renderHook(() => useWebSocket("ws://localhost:4455/ws"));
+
     // Simulate WebSocket connection
     await waitFor(() => {
       // WebSocket should be created
-      expect(global.WebSocket).toHaveBeenCalledWith('ws://localhost:4455/ws')
-    })
-  })
+      expect(global.WebSocket).toHaveBeenCalledWith("ws://localhost:4455/ws");
+    });
+  });
 
-  it('should send message when connected', () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:4455/ws'))
-    
+  it("should send message when connected", () => {
+    const { result } = renderHook(() => useWebSocket("ws://localhost:4455/ws"));
+
     // Simulate connection
-    mockWebSocket.readyState = 1 // OPEN
-    
-    result.current.sendMessage('test-control', 1.0, {})
-    
-    expect(mockWebSocket.send).toHaveBeenCalled()
-  })
+    mockWebSocket.readyState = 1; // OPEN
 
-  it('should handle disconnection', () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:4455/ws'))
-    
-    result.current.disconnect()
-    
-    expect(mockWebSocket.close).toHaveBeenCalled()
-  })
-})
+    result.current.sendMessage("test-control", 1.0, {});
 
+    expect(mockWebSocket.send).toHaveBeenCalled();
+  });
 
+  it("should handle disconnection", () => {
+    const { result } = renderHook(() => useWebSocket("ws://localhost:4455/ws"));
+
+    result.current.disconnect();
+
+    expect(mockWebSocket.close).toHaveBeenCalled();
+  });
+});
