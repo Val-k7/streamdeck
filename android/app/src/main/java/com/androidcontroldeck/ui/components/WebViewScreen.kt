@@ -448,6 +448,7 @@ class AndroidBridge(
                                                 put("colSpan", control.colSpan)
                                                 put("label", control.label ?: "")
                                                 put("colorHex", control.colorHex ?: "")
+                                                put("icon", control.icon ?: "")
                                                 control.action?.let { action ->
                                                     put(
                                                             "action",

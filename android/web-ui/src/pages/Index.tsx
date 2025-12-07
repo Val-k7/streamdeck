@@ -306,11 +306,43 @@ const Index = () => {
         return "primary";
       };
 
+      // Auto-mapper une icône basée sur le label ou l'id si pas d'icône définie
+      const autoMapIcon = (id: string, label?: string): string | undefined => {
+        // Si l'icône est déjà définie, l'utiliser
+        if (control.icon) return control.icon;
+        
+        const text = (label || id).toLowerCase();
+        
+        // Mapping basé sur des mots-clés
+        if (text.includes("play") || text.includes("pause")) return "Play";
+        if (text.includes("stop")) return "Square";
+        if (text.includes("record") || text.includes("rec")) return "Circle";
+        if (text.includes("prev") || text.includes("previous")) return "SkipBack";
+        if (text.includes("next")) return "SkipForward";
+        if (text.includes("mute") || text.includes("mic")) return "Mic";
+        if (text.includes("volume") || text.includes("audio")) return "Volume2";
+        if (text.includes("screen") || text.includes("screenshot")) return "Monitor";
+        if (text.includes("lock")) return "Lock";
+        if (text.includes("bright") || text.includes("sun")) return "Sun";
+        if (text.includes("app")) return "Grid";
+        if (text.includes("stream")) return "Radio";
+        if (text.includes("scene")) return "Layers";
+        if (text.includes("discord")) return "MessageSquare";
+        if (text.includes("cam") || text.includes("video")) return "Video";
+        if (text.includes("save")) return "Save";
+        if (text.includes("load")) return "FolderOpen";
+        if (text.includes("deafen")) return "VolumeX";
+        if (text.includes("media")) return "Music";
+        
+        return undefined;
+      };
+
       return {
         id: control.id,
         type: mapControlType(control.type),
         size,
         label: control.label || "",
+        iconName: autoMapIcon(control.id, control.label),
         color: mapColor(control.colorHex),
         colorHex: control.colorHex,
         defaultActive: false,

@@ -20,6 +20,7 @@ export interface Control {
   colSpan?: number;
   label?: string;
   colorHex?: string;
+  icon?: string;
   action?: {
     type: string;
     payload?: Record<string, unknown>;

@@ -8,8 +8,113 @@ import com.androidcontroldeck.data.model.Profile
 
 /**
  * Templates de profils prédéfinis pour différents cas d'usage
+ * Icônes disponibles: Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Mic, MicOff,
+ * Monitor, Camera, Radio, Save, FolderOpen, Printer, Copy, Clipboard, Undo2, Redo2,
+ * Lock, Sun, AppWindow, Gamepad2, Headphones, Music, Film, Settings, Power, RefreshCw
  */
 object ProfileTemplates {
+
+    /**
+     * Template Mixage Audio Windows - Contrôle du volume par application
+     * Premier template car le plus utile pour un usage quotidien
+     */
+    fun mixerTemplate(nameProvider: (String) -> String): Profile {
+        return Profile(
+            id = "template_mixer",
+            name = nameProvider("template_mixer_name"),
+            rows = 2,
+            cols = 6,
+            version = 1,
+            controls = listOf(
+                // Ligne 1 : Faders de volume par application
+                Control(
+                    id = "fader_master",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 0,
+                    rowSpan = 2,
+                    label = nameProvider("template_master"),
+                    icon = "Volume2",
+                    colorHex = "#22C55E",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_VOLUME", "volume": 50}""")
+                ),
+                Control(
+                    id = "fader_app1",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 1,
+                    rowSpan = 2,
+                    label = nameProvider("template_app_1"),
+                    icon = "AppWindow",
+                    colorHex = "#3B82F6",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "chrome.exe", "volume": 50}""")
+                ),
+                Control(
+                    id = "fader_app2",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 2,
+                    rowSpan = 2,
+                    label = nameProvider("template_app_2"),
+                    icon = "Music",
+                    colorHex = "#8B5CF6",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "spotify.exe", "volume": 50}""")
+                ),
+                Control(
+                    id = "fader_app3",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 3,
+                    rowSpan = 2,
+                    label = nameProvider("template_app_3"),
+                    icon = "Headphones",
+                    colorHex = "#5865F2",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "discord.exe", "volume": 50}""")
+                ),
+                Control(
+                    id = "fader_app4",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 4,
+                    rowSpan = 2,
+                    label = nameProvider("template_app_4"),
+                    icon = "Gamepad2",
+                    colorHex = "#EF4444",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "Game", "volume": 50}""")
+                ),
+                Control(
+                    id = "btn_mute_master",
+                    type = ControlType.TOGGLE,
+                    row = 0,
+                    col = 5,
+                    label = nameProvider("template_mute"),
+                    icon = "VolumeX",
+                    colorHex = "#EF4444",
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "MUTE"}""")
+                ),
+                Control(
+                    id = "btn_switch_output",
+                    type = ControlType.BUTTON,
+                    row = 1,
+                    col = 5,
+                    label = nameProvider("template_output"),
+                    icon = "RefreshCw",
+                    colorHex = "#06B6D4",
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_DEFAULT_DEVICE", "deviceId": "default", "deviceType": "output"}""")
+                )
+            )
+        )
+    }
 
     /**
      * Template pour le streaming avec OBS
@@ -28,8 +133,9 @@ object ProfileTemplates {
                     type = ControlType.BUTTON,
                     row = 0,
                     col = 0,
-                    label = nameProvider("template_btn_start_stream"),
-                    colorHex = "#FF5722",
+                    label = nameProvider("template_go_live"),
+                    icon = "Radio",
+                    colorHex = "#EF4444",
                     action = Action(type = ActionType.OBS, payload = "StartStreaming")
                 ),
                 Control(
@@ -37,18 +143,40 @@ object ProfileTemplates {
                     type = ControlType.BUTTON,
                     row = 0,
                     col = 1,
-                    label = nameProvider("template_btn_stop_stream"),
-                    colorHex = "#F44336",
+                    label = nameProvider("template_end"),
+                    icon = "Power",
+                    colorHex = "#6B7280",
                     action = Action(type = ActionType.OBS, payload = "StopStreaming")
                 ),
                 Control(
                     id = "btn_record",
-                    type = ControlType.BUTTON,
+                    type = ControlType.TOGGLE,
                     row = 0,
                     col = 2,
-                    label = nameProvider("template_btn_record"),
-                    colorHex = "#E91E63",
+                    label = nameProvider("template_rec"),
+                    icon = "Film",
+                    colorHex = "#F97316",
                     action = Action(type = ActionType.OBS, payload = "ToggleRecording")
+                ),
+                Control(
+                    id = "btn_mute_mic",
+                    type = ControlType.TOGGLE,
+                    row = 0,
+                    col = 3,
+                    label = nameProvider("template_mic"),
+                    icon = "MicOff",
+                    colorHex = "#FBBF24",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "MUTE", "params": {"inputName": "Mic/Aux"}}""")
+                ),
+                Control(
+                    id = "btn_mute_desktop",
+                    type = ControlType.TOGGLE,
+                    row = 0,
+                    col = 4,
+                    label = nameProvider("template_desktop"),
+                    icon = "VolumeX",
+                    colorHex = "#FBBF24",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "MUTE", "params": {"inputName": "Desktop Audio"}}""")
                 ),
 
                 // Ligne 2 : Scènes OBS
@@ -57,30 +185,50 @@ object ProfileTemplates {
                     type = ControlType.PAD,
                     row = 1,
                     col = 0,
-                    colSpan = 2,
-                    label = nameProvider("template_scene_1"),
-                    colorHex = "#2196F3",
-                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Scene 1"}}""")
+                    label = nameProvider("template_cam"),
+                    icon = "Camera",
+                    colorHex = "#3B82F6",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Camera"}}""")
                 ),
                 Control(
                     id = "pad_scene2",
                     type = ControlType.PAD,
                     row = 1,
-                    col = 2,
-                    colSpan = 2,
-                    label = nameProvider("template_scene_2"),
-                    colorHex = "#4CAF50",
-                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Scene 2"}}""")
+                    col = 1,
+                    label = nameProvider("template_screen"),
+                    icon = "Monitor",
+                    colorHex = "#22C55E",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Screen"}}""")
                 ),
                 Control(
                     id = "pad_scene3",
                     type = ControlType.PAD,
                     row = 1,
+                    col = 2,
+                    label = nameProvider("template_game"),
+                    icon = "Gamepad2",
+                    colorHex = "#8B5CF6",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Game"}}""")
+                ),
+                Control(
+                    id = "pad_scene4",
+                    type = ControlType.PAD,
+                    row = 1,
+                    col = 3,
+                    label = nameProvider("template_brb"),
+                    icon = "Clock",
+                    colorHex = "#F97316",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "BRB"}}""")
+                ),
+                Control(
+                    id = "pad_scene5",
+                    type = ControlType.PAD,
+                    row = 1,
                     col = 4,
-                    colSpan = 1,
-                    label = nameProvider("template_scene_3"),
-                    colorHex = "#FF9800",
-                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Scene 3"}}""")
+                    label = nameProvider("template_end_screen"),
+                    icon = "X",
+                    colorHex = "#6B7280",
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_SCENE", "params": {"sceneName": "Ending"}}""")
                 ),
 
                 // Ligne 3 : Contrôles audio
@@ -90,55 +238,63 @@ object ProfileTemplates {
                     row = 2,
                     col = 0,
                     colSpan = 2,
-                    label = nameProvider("template_mic_volume"),
+                    label = nameProvider("template_mic"),
+                    icon = "Mic",
+                    colorHex = "#22C55E",
                     minValue = 0f,
                     maxValue = 100f,
                     action = Action(type = ActionType.OBS, payload = """{"action": "SET_VOLUME", "params": {"inputName": "Mic/Aux", "volumeDb": 0}}""")
                 ),
                 Control(
-                    id = "btn_mute_mic",
-                    type = ControlType.BUTTON,
-                    row = 2,
-                    col = 2,
-                    label = nameProvider("template_mute_mic"),
-                    colorHex = "#FFC107",
-                    action = Action(type = ActionType.OBS, payload = """{"action": "MUTE", "params": {"inputName": "Mic/Aux"}}""")
-                ),
-                Control(
-                    id = "fader_system",
+                    id = "fader_music",
                     type = ControlType.FADER,
                     row = 2,
-                    col = 3,
+                    col = 2,
                     colSpan = 2,
-                    label = nameProvider("template_system_volume"),
+                    label = nameProvider("template_music"),
+                    icon = "Music",
+                    colorHex = "#8B5CF6",
                     minValue = 0f,
                     maxValue = 100f,
-                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_VOLUME", "volume": 50}""")
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "spotify.exe", "volume": 50}""")
+                ),
+                Control(
+                    id = "fader_alerts",
+                    type = ControlType.FADER,
+                    row = 2,
+                    col = 4,
+                    label = nameProvider("template_alerts"),
+                    icon = "Bell",
+                    colorHex = "#FBBF24",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.OBS, payload = """{"action": "SET_VOLUME", "params": {"inputName": "Alerts", "volumeDb": 0}}""")
                 )
             )
         )
     }
 
     /**
-     * Template pour la production audio
+     * Template pour la production audio - Table de mixage complète
      */
     fun audioProductionTemplate(nameProvider: (String) -> String): Profile {
         return Profile(
             id = "template_audio_production",
             name = nameProvider("template_audio_production_name"),
-            rows = 4,
-            cols = 4,
+            rows = 3,
+            cols = 5,
             version = 1,
             controls = listOf(
-                // Faders de volume pour différentes sources
+                // Faders de volume principaux
                 Control(
                     id = "fader_master",
                     type = ControlType.FADER,
                     row = 0,
                     col = 0,
-                    colSpan = 2,
-                    rowSpan = 2,
-                    label = nameProvider("template_master_volume"),
+                    rowSpan = 3,
+                    label = nameProvider("template_master"),
+                    icon = "Volume2",
+                    colorHex = "#22C55E",
                     minValue = 0f,
                     maxValue = 100f,
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_VOLUME", "volume": 50}""")
@@ -147,8 +303,11 @@ object ProfileTemplates {
                     id = "fader_track1",
                     type = ControlType.FADER,
                     row = 0,
-                    col = 2,
-                    label = nameProvider("template_track_1"),
+                    col = 1,
+                    rowSpan = 2,
+                    label = nameProvider("template_ch_1"),
+                    icon = "Music",
+                    colorHex = "#3B82F6",
                     minValue = 0f,
                     maxValue = 100f,
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "DAW", "volume": 50}""")
@@ -157,8 +316,11 @@ object ProfileTemplates {
                     id = "fader_track2",
                     type = ControlType.FADER,
                     row = 0,
-                    col = 3,
-                    label = nameProvider("template_track_2"),
+                    col = 2,
+                    rowSpan = 2,
+                    label = nameProvider("template_ch_2"),
+                    icon = "AppWindow",
+                    colorHex = "#8B5CF6",
                     minValue = 0f,
                     maxValue = 100f,
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "Browser", "volume": 50}""")
@@ -166,68 +328,86 @@ object ProfileTemplates {
                 Control(
                     id = "fader_mic1",
                     type = ControlType.FADER,
-                    row = 1,
-                    col = 2,
-                    label = nameProvider("template_mic_1"),
+                    row = 0,
+                    col = 3,
+                    rowSpan = 2,
+                    label = nameProvider("template_mic"),
+                    icon = "Mic",
+                    colorHex = "#EF4444",
                     minValue = 0f,
                     maxValue = 100f,
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_DEVICE_VOLUME", "device": "default", "volume": 50}""")
                 ),
                 Control(
-                    id = "fader_mic2",
-                    type = ControlType.FADER,
-                    row = 1,
-                    col = 3,
-                    label = nameProvider("template_mic_2"),
-                    minValue = 0f,
+                    id = "knob_balance",
+                    type = ControlType.KNOB,
+                    row = 0,
+                    col = 4,
+                    label = nameProvider("template_pan"),
+                    icon = "Settings",
+                    colorHex = "#06B6D4",
+                    minValue = -100f,
                     maxValue = 100f,
-                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_DEVICE_VOLUME", "device": "default", "volume": 50}""")
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_BALANCE", "balance": 0}""")
                 ),
-                // Mute buttons
+                Control(
+                    id = "knob_gain",
+                    type = ControlType.KNOB,
+                    row = 1,
+                    col = 4,
+                    label = nameProvider("template_gain"),
+                    icon = "Settings",
+                    colorHex = "#F97316",
+                    minValue = -12f,
+                    maxValue = 12f
+                ),
+                // Boutons de contrôle
                 Control(
                     id = "btn_mute_all",
-                    type = ControlType.BUTTON,
+                    type = ControlType.TOGGLE,
                     row = 2,
-                    col = 0,
-                    label = nameProvider("template_mute_all"),
-                    colorHex = "#F44336",
+                    col = 1,
+                    label = nameProvider("template_mute"),
+                    icon = "VolumeX",
+                    colorHex = "#EF4444",
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "MUTE"}""")
                 ),
                 Control(
                     id = "btn_device_switch",
                     type = ControlType.BUTTON,
                     row = 2,
-                    col = 1,
-                    label = nameProvider("template_switch_device"),
-                    colorHex = "#2196F3",
+                    col = 2,
+                    label = nameProvider("template_output"),
+                    icon = "RefreshCw",
+                    colorHex = "#3B82F6",
                     action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_DEFAULT_DEVICE", "deviceId": "default", "deviceType": "output"}""")
                 ),
-                // Knobs pour ajustements fins
                 Control(
-                    id = "knob_balance",
-                    type = ControlType.KNOB,
-                    row = 2,
-                    col = 2,
-                    label = nameProvider("template_balance"),
-                    minValue = -100f,
-                    maxValue = 100f,
-                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_BALANCE", "balance": 0}""")
-                ),
-                Control(
-                    id = "knob_high",
-                    type = ControlType.KNOB,
+                    id = "btn_input_switch",
+                    type = ControlType.BUTTON,
                     row = 2,
                     col = 3,
-                    label = nameProvider("template_high"),
-                    minValue = -12f,
-                    maxValue = 12f
+                    label = nameProvider("template_input"),
+                    icon = "Mic",
+                    colorHex = "#8B5CF6",
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_DEFAULT_DEVICE", "deviceId": "default", "deviceType": "input"}""")
+                ),
+                Control(
+                    id = "btn_reset",
+                    type = ControlType.BUTTON,
+                    row = 2,
+                    col = 4,
+                    label = nameProvider("template_reset"),
+                    icon = "RotateCcw",
+                    colorHex = "#6B7280",
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_VOLUME", "volume": 50}""")
                 )
             )
         )
     }
 
     /**
-     * Template pour le gaming
+     * Template pour le gaming - Raccourcis et Discord
      */
     fun gamingTemplate(nameProvider: (String) -> String): Profile {
         return Profile(
@@ -237,69 +417,88 @@ object ProfileTemplates {
             cols = 5,
             version = 1,
             controls = listOf(
-                // Raccourcis clavier de jeu
-                Control(
-                    id = "btn_save",
-                    type = ControlType.BUTTON,
-                    row = 0,
-                    col = 0,
-                    label = nameProvider("template_save"),
-                    colorHex = "#4CAF50",
-                    action = Action(type = ActionType.KEYBOARD, payload = "CTRL+S")
-                ),
-                Control(
-                    id = "btn_load",
-                    type = ControlType.BUTTON,
-                    row = 0,
-                    col = 1,
-                    label = nameProvider("template_load"),
-                    colorHex = "#2196F3",
-                    action = Action(type = ActionType.KEYBOARD, payload = "CTRL+L")
-                ),
+                // Ligne 1 : Raccourcis de jeu
                 Control(
                     id = "btn_quick_save",
                     type = ControlType.BUTTON,
                     row = 0,
-                    col = 2,
-                    label = nameProvider("template_quick_save"),
-                    colorHex = "#FF9800",
+                    col = 0,
+                    label = nameProvider("template_f5"),
+                    icon = "Save",
+                    colorHex = "#22C55E",
                     action = Action(type = ActionType.KEYBOARD, payload = "F5")
+                ),
+                Control(
+                    id = "btn_quick_load",
+                    type = ControlType.BUTTON,
+                    row = 0,
+                    col = 1,
+                    label = nameProvider("template_f9"),
+                    icon = "FolderOpen",
+                    colorHex = "#3B82F6",
+                    action = Action(type = ActionType.KEYBOARD, payload = "F9")
+                ),
+                Control(
+                    id = "btn_screenshot",
+                    type = ControlType.BUTTON,
+                    row = 0,
+                    col = 2,
+                    label = nameProvider("template_capture"),
+                    icon = "Camera",
+                    colorHex = "#EC4899",
+                    action = Action(type = ActionType.CUSTOM, payload = """{"action": "screenshot", "payload": {"type": "full"}}""")
                 ),
                 Control(
                     id = "btn_pause",
                     type = ControlType.BUTTON,
                     row = 0,
                     col = 3,
-                    label = nameProvider("template_pause"),
-                    colorHex = "#9E9E9E",
+                    label = nameProvider("template_esc"),
+                    icon = "Pause",
+                    colorHex = "#6B7280",
                     action = Action(type = ActionType.KEYBOARD, payload = "ESC")
                 ),
-                // Discord controls
+                Control(
+                    id = "fader_game_volume",
+                    type = ControlType.FADER,
+                    row = 0,
+                    col = 4,
+                    rowSpan = 2,
+                    label = nameProvider("template_game"),
+                    icon = "Gamepad2",
+                    colorHex = "#8B5CF6",
+                    minValue = 0f,
+                    maxValue = 100f,
+                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "Game", "volume": 50}""")
+                ),
+                // Ligne 2 : Discord + Media
                 Control(
                     id = "btn_discord_mute",
-                    type = ControlType.BUTTON,
+                    type = ControlType.TOGGLE,
                     row = 1,
                     col = 0,
-                    label = nameProvider("template_discord_mute"),
+                    label = nameProvider("template_mic"),
+                    icon = "MicOff",
                     colorHex = "#5865F2",
                     action = Action(type = ActionType.CUSTOM, payload = """{"plugin": "discord", "action": "mute", "payload": {"toggle": true}}""")
                 ),
                 Control(
                     id = "btn_discord_deafen",
-                    type = ControlType.BUTTON,
+                    type = ControlType.TOGGLE,
                     row = 1,
                     col = 1,
-                    label = nameProvider("template_discord_deafen"),
+                    label = nameProvider("template_deaf"),
+                    icon = "Headphones",
                     colorHex = "#5865F2",
                     action = Action(type = ActionType.CUSTOM, payload = """{"plugin": "discord", "action": "deafen", "payload": {"toggle": true}}""")
                 ),
-                // Media controls
                 Control(
                     id = "btn_media_play",
                     type = ControlType.BUTTON,
                     row = 1,
                     col = 2,
-                    label = nameProvider("template_media_play"),
+                    label = nameProvider("template_play"),
+                    icon = "Play",
                     colorHex = "#1DB954",
                     action = Action(type = ActionType.CUSTOM, payload = """{"action": "media", "payload": {"action": "play_pause"}}""")
                 ),
@@ -308,19 +507,10 @@ object ProfileTemplates {
                     type = ControlType.BUTTON,
                     row = 1,
                     col = 3,
-                    label = nameProvider("template_media_next"),
+                    label = nameProvider("template_next"),
+                    icon = "SkipForward",
                     colorHex = "#1DB954",
                     action = Action(type = ActionType.CUSTOM, payload = """{"action": "media", "payload": {"action": "next"}}""")
-                ),
-                Control(
-                    id = "fader_game_volume",
-                    type = ControlType.FADER,
-                    row = 1,
-                    col = 4,
-                    label = nameProvider("template_game_volume"),
-                    minValue = 0f,
-                    maxValue = 100f,
-                    action = Action(type = ActionType.AUDIO, payload = """{"action": "SET_APPLICATION_VOLUME", "application": "Game", "volume": 50}""")
                 )
             )
         )

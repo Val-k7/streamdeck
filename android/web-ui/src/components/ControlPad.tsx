@@ -488,12 +488,13 @@ export const ControlPad = ({
   const renderFaderContent = () => {
     // Fader simplifié : toute la zone est cliquable, pas de thumb
     // La barre de progression remplit visuellement la case
+    const faderColor = colorColorMap[color];
 
     if (isHorizontal) {
       return (
         <div
           ref={faderTrackRef}
-          className="w-full h-full relative touch-none cursor-pointer overflow-hidden"
+          className="w-full h-full relative touch-none cursor-pointer overflow-hidden rounded-lg"
           onPointerDown={handleFaderPointerDown}
           onPointerMove={handleFaderPointerMove}
           onPointerUp={handleFaderPointerUp}
@@ -503,27 +504,37 @@ export const ControlPad = ({
           onTouchEnd={handleFaderTouchEnd}
           onTouchCancel={handleFaderTouchEnd}
         >
+          {/* Fond du track */}
+          <div className="absolute inset-0 bg-muted/50" />
           {/* Barre de progression qui remplit la case */}
           <motion.div
-            className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-primary/40 to-primary"
+            className="absolute top-0 left-0 bottom-0 rounded-r-lg"
+            style={{ 
+              background: `linear-gradient(to right, ${faderColor}66, ${faderColor})`,
+              boxShadow: `0 0 20px ${faderColor}40`
+            }}
             initial={{ width: 0 }}
             animate={{ width: `${currentValue}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
           {/* Label et valeur superposés */}
-          <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
-            <span className="text-xs text-mono font-medium uppercase tracking-wide text-foreground drop-shadow-md truncate">
+          <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none z-10">
+            <span className="text-xs font-medium uppercase tracking-wide text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate">
               {label}
             </span>
-            <span className="text-sm text-mono font-bold text-foreground drop-shadow-md">
+            <span className="text-sm font-bold text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
               {currentValue}%
             </span>
           </div>
           {/* Ligne indicatrice de position */}
           <motion.div
-            className="absolute top-0 bottom-0 w-0.5 bg-foreground/80 shadow-lg"
-            style={{ left: `${currentValue}%` }}
-            animate={{ opacity: isDragging ? 1 : 0.6 }}
+            className="absolute top-0 bottom-0 w-1 rounded-full z-10"
+            style={{ 
+              left: `calc(${currentValue}% - 2px)`,
+              backgroundColor: "white",
+              boxShadow: `0 0 8px ${faderColor}`
+            }}
+            animate={{ opacity: isDragging ? 1 : 0.8 }}
           />
         </div>
       );
@@ -533,7 +544,7 @@ export const ControlPad = ({
     return (
       <div
         ref={faderTrackRef}
-        className="w-full h-full relative touch-none cursor-pointer overflow-hidden"
+        className="w-full h-full relative touch-none cursor-pointer overflow-hidden rounded-lg"
         onPointerDown={handleFaderPointerDown}
         onPointerMove={handleFaderPointerMove}
         onPointerUp={handleFaderPointerUp}
@@ -543,30 +554,40 @@ export const ControlPad = ({
         onTouchEnd={handleFaderTouchEnd}
         onTouchCancel={handleFaderTouchEnd}
       >
+        {/* Fond du track */}
+        <div className="absolute inset-0 bg-muted/50" />
         {/* Barre de progression qui remplit depuis le bas */}
         <motion.div
-          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary/40 to-primary"
+          className="absolute bottom-0 left-0 right-0 rounded-t-lg"
+          style={{ 
+            background: `linear-gradient(to top, ${faderColor}66, ${faderColor})`,
+            boxShadow: `0 0 20px ${faderColor}40`
+          }}
           initial={{ height: 0 }}
           animate={{ height: `${currentValue}%` }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
         {/* Label en haut */}
-        <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-none">
-          <span className="text-[10px] xs:text-xs text-mono font-medium uppercase tracking-wide text-foreground drop-shadow-md truncate px-2">
+        <div className="absolute top-2 left-0 right-0 flex justify-center pointer-events-none z-10">
+          <span className="text-[10px] xs:text-xs font-medium uppercase tracking-wide text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] truncate px-2">
             {label}
           </span>
         </div>
         {/* Valeur en bas */}
-        <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none">
-          <span className="text-sm text-mono font-bold text-foreground drop-shadow-md">
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center pointer-events-none z-10">
+          <span className="text-sm font-bold text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {currentValue}%
           </span>
         </div>
         {/* Ligne indicatrice de position */}
         <motion.div
-          className="absolute left-0 right-0 h-0.5 bg-foreground/80 shadow-lg"
-          style={{ bottom: `${currentValue}%` }}
-          animate={{ opacity: isDragging ? 1 : 0.6 }}
+          className="absolute left-0 right-0 h-1 rounded-full z-10"
+          style={{ 
+            bottom: `calc(${currentValue}% - 2px)`,
+            backgroundColor: "white",
+            boxShadow: `0 0 8px ${faderColor}`
+          }}
+          animate={{ opacity: isDragging ? 1 : 0.8 }}
         />
       </div>
     );

@@ -1,6 +1,8 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import os from 'os'
+import fs from 'fs'
+import path from 'path'
 
 const execAsync = promisify(exec)
 const platform = os.platform()
@@ -132,11 +134,9 @@ export async function setBrightness(brightness) {
 
   try {
     // Utiliser PowerShell avec WMI pour ajuster la luminosité
-    const script = `
-      $brightness = ${brightness}
-      (Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, $brightness)
-    `
-    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/\n/g, ' ').replace(/"/g, '\\"')}"`)
+    // Séparer les commandes avec des point-virgules pour éviter les problèmes de parsing
+    const script = `$brightness = ${brightness}; (Get-WmiObject -Namespace root/WMI -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, $brightness)`
+    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/"/g, '\\"')}"`)
     return { success: true, action: 'brightness', brightness }
   } catch (error) {
     throw new Error(`Failed to set brightness: ${error.message}`)
@@ -153,32 +153,36 @@ export async function openApps() {
 
   try {
     // Simuler WIN+A pour ouvrir le Action Center (Windows 10/11)
-    // Alternative: WIN pour ouvrir le menu Démarrer
-    const script = `
-      Add-Type -TypeDefinition @"
-        using System;
-        using System.Runtime.InteropServices;
-        using System.Windows.Forms;
+    // Utiliser un fichier temporaire pour éviter les problèmes de here-string
+    const csharpCode = `
+using System;
+using System.Runtime.InteropServices;
 
-        public class Keyboard {
-          [DllImport("user32.dll")]
-          public static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+public class Keyboard {
+  [DllImport("user32.dll")]
+  public static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 
-          public static void SendWinA() {
-            const byte VK_LWIN = 0x5B;
-            const byte VK_A = 0x41;
-            const int KEYEVENTF_KEYUP = 0x0002;
+  public static void Main() {
+    const byte VK_LWIN = 0x5B;
+    const byte VK_A = 0x41;
+    const int KEYEVENTF_KEYUP = 0x0002;
 
-            keybd_event(VK_LWIN, 0, 0, 0);
-            keybd_event(VK_A, 0, 0, 0);
-            keybd_event(VK_A, 0, KEYEVENTF_KEYUP, 0);
-            keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
-          }
-        }
-"@
-      [Keyboard]::SendWinA()
-    `
-    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/\n/g, ' ').replace(/"/g, '\\"')}"`)
+    keybd_event(VK_LWIN, 0, 0, 0);
+    keybd_event(VK_A, 0, 0, 0);
+    keybd_event(VK_A, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+  }
+}
+`.trim()
+
+    const tempFile = path.join(os.tmpdir(), `keyboard_${Date.now()}.cs`)
+    fs.writeFileSync(tempFile, csharpCode)
+    
+    const script = `$code = Get-Content -Path '${tempFile.replace(/\\/g, '\\\\')}' -Raw; Add-Type -TypeDefinition $code -Language CSharp; [Keyboard]::Main()`
+    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/"/g, '\\"')}"`)
+    
+    try { fs.unlinkSync(tempFile) } catch {}
+    
     return { success: true, action: 'open_apps' }
   } catch (error) {
     throw new Error(`Failed to open apps menu: ${error.message}`)

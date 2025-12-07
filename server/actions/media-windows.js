@@ -1,6 +1,8 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import os from 'os'
+import fs from 'fs'
+import path from 'path'
 
 const execAsync = promisify(exec)
 const platform = os.platform()
@@ -28,28 +30,42 @@ export async function handleMediaKeys(action, payload) {
     throw new Error(`Unknown media key action: ${action}`)
   }
 
-  const script = `
-    Add-Type -TypeDefinition @"
-      using System;
-      using System.Runtime.InteropServices;
+  // Utiliser [System.Windows.Forms.SendKeys] ou directement keybd_event via rundll32
+  // Approche simple: utiliser un script PowerShell avec fichier temporaire
+  const csharpCode = `
+using System;
+using System.Runtime.InteropServices;
 
-      public class MediaKeys {
-        [DllImport("user32.dll")]
-        public static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+public class MediaKeys {
+  [DllImport("user32.dll")]
+  public static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 
-        public static void SendKey(byte vkCode) {
-          keybd_event(vkCode, 0, 0, 0);
-          keybd_event(vkCode, 0, 0x0002, 0);
-        }
-      }
-"@
-    [MediaKeys]::SendKey(${vkCode})
-  `
+  public static void Main() {
+    keybd_event(${vkCode}, 0, 0, 0);
+    keybd_event(${vkCode}, 0, 0x0002, 0);
+  }
+}
+`.trim()
 
+  const tempFile = path.join(os.tmpdir(), `mediakey_${Date.now()}.cs`)
+  
   try {
-    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/\n/g, ' ').replace(/"/g, '\\"')}"`)
+    fs.writeFileSync(tempFile, csharpCode)
+    
+    // Compiler et exécuter avec csc.exe ou utiliser Add-Type avec fichier
+    const script = `
+$code = Get-Content -Path '${tempFile.replace(/\\/g, '\\\\')}' -Raw
+Add-Type -TypeDefinition $code -Language CSharp
+[MediaKeys]::Main()
+`
+    await execAsync(`powershell -NoProfile -ExecutionPolicy Bypass -Command "${script.replace(/\n/g, '; ').replace(/"/g, '\\"')}"`)
+    
+    // Cleanup
+    try { fs.unlinkSync(tempFile) } catch {}
+    
     return { success: true, action }
   } catch (error) {
+    try { fs.unlinkSync(tempFile) } catch {}
     throw new Error(`Failed to send media key: ${error.message}`)
   }
 }
