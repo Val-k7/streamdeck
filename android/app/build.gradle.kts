@@ -1,8 +1,8 @@
 // Configuration de build pour l'application Android
 // Note: Ce fichier existe déjà, voici un exemple de configuration recommandée
 
-import java.util.Properties
 import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -16,6 +16,7 @@ plugins {
 // Charger les propriétés du keystore si le fichier existe
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
+
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
@@ -32,9 +33,7 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        vectorDrawables { useSupportLibrary = true }
     }
 
     signingConfigs {
@@ -53,8 +52,8 @@ android {
             isMinifyEnabled = true
             isDebuggable = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
             )
             // Le fichier network_security_config.xml dans src/release/res/xml sera utilisé
             // Il interdit le cleartext traffic en production
@@ -76,20 +75,14 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
     buildFeatures {
         compose = true
         buildConfig = true
     }
 
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
-    }
+    packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
 }
 
 dependencies {
@@ -122,7 +115,8 @@ dependencies {
     // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    // Note: WebSocket support is included in okhttp since version 3.x, no separate dependency needed
+    // Note: WebSocket support is included in okhttp since version 3.x, no separate dependency
+    // needed
 
     // JSON
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
