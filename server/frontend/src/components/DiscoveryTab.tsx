@@ -1,11 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { logger } from "@/lib/logger";
+import { CheckCircle2, Loader2, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface DiscoveredServer {
   serverId: string;
@@ -31,27 +37,34 @@ interface PairedServer {
 export const DiscoveryTab = () => {
   const { toast } = useToast();
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [discoveredServers, setDiscoveredServers] = useState<DiscoveredServer[]>([]);
+  const [discoveredServers, setDiscoveredServers] = useState<
+    DiscoveredServer[]
+  >([]);
   const [pairedServers, setPairedServers] = useState<PairedServer[]>([]);
   const [pairingCode, setPairingCode] = useState<string>("");
   const [pairingServerId, setPairingServerId] = useState<string | null>(null);
   const [isPairing, setIsPairing] = useState(false);
 
-  const fetchJson = useCallback(async <T,>(url: string, options?: RequestInit): Promise<T> => {
-    const response = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
-      ...options,
-    });
-    if (!response.ok) {
-      throw new Error(`${response.status} ${response.statusText}`);
-    }
-    return (await response.json()) as T;
-  }, []);
+  const fetchJson = useCallback(
+    async <T,>(url: string, options?: RequestInit): Promise<T> => {
+      const response = await fetch(url, {
+        headers: { "Content-Type": "application/json" },
+        ...options,
+      });
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+      return (await response.json()) as T;
+    },
+    []
+  );
 
   const loadDiscoveredServers = useCallback(async () => {
     setIsDiscovering(true);
     try {
-      const data = await fetchJson<DiscoveredServer & { capabilities?: unknown }>("/discovery");
+      const data = await fetchJson<
+        DiscoveredServer & { capabilities?: unknown }
+      >("/discovery");
       setDiscoveredServers([
         {
           serverId: data.serverId,
@@ -66,7 +79,8 @@ export const DiscoveryTab = () => {
       toast({
         variant: "destructive",
         title: "Discovery failed",
-        description: e instanceof Error ? e.message : "Unable to reach discovery endpoint",
+        description:
+          e instanceof Error ? e.message : "Unable to reach discovery endpoint",
       });
       logger.error("DiscoveryTab: discovery failed", e);
       setDiscoveredServers([]);
@@ -77,9 +91,9 @@ export const DiscoveryTab = () => {
 
   const loadPairedServers = useCallback(async () => {
     try {
-      const data = await fetchJson<{ servers?: PairedServer[] | Record<string, string> }>(
-        "/discovery/pairing/servers"
-      );
+      const data = await fetchJson<{
+        servers?: PairedServer[] | Record<string, string>;
+      }>("/discovery/pairing/servers");
 
       if (!data.servers) {
         setPairedServers([]);
@@ -89,18 +103,22 @@ export const DiscoveryTab = () => {
       if (Array.isArray(data.servers)) {
         setPairedServers(data.servers);
       } else {
-        const mapped = Object.entries(data.servers).map(([serverId, fingerprint]) => ({
-          serverId,
-          serverName: serverId,
-          protocol: window.location.protocol === "https:" ? "wss" : "ws",
-          host: window.location.hostname,
-          port: window.location.port ? Number(window.location.port) : undefined,
-          lastSeen: Date.now(),
-          isAutoConnect: true,
-          pairedAt: Date.now(),
-          // fingerprint kept for potential future display/use
-          fingerprint,
-        }));
+        const mapped = Object.entries(data.servers).map(
+          ([serverId, fingerprint]) => ({
+            serverId,
+            serverName: serverId,
+            protocol: window.location.protocol === "https:" ? "wss" : "ws",
+            host: window.location.hostname,
+            port: window.location.port
+              ? Number(window.location.port)
+              : undefined,
+            lastSeen: Date.now(),
+            isAutoConnect: true,
+            pairedAt: Date.now(),
+            // fingerprint kept for potential future display/use
+            fingerprint,
+          })
+        );
         setPairedServers(mapped);
       }
     } catch (e) {
@@ -118,9 +136,12 @@ export const DiscoveryTab = () => {
     setIsPairing(true);
     setPairingServerId(serverId ?? "python-backend");
     try {
-      const data = await fetchJson<{ code: string; serverId: string }>("/discovery/pairing/request", {
-        method: "POST",
-      });
+      const data = await fetchJson<{ code: string; serverId: string }>(
+        "/discovery/pairing/request",
+        {
+          method: "POST",
+        }
+      );
       setPairingCode(data.code);
       setPairingServerId(data.serverId);
       toast({ title: "Pairing code", description: `Code: ${data.code}` });
@@ -128,7 +149,8 @@ export const DiscoveryTab = () => {
       toast({
         variant: "destructive",
         title: "Pairing failed",
-        description: e instanceof Error ? e.message : "Unable to request pairing code",
+        description:
+          e instanceof Error ? e.message : "Unable to request pairing code",
       });
       setPairingServerId(null);
       setPairingCode("");
@@ -141,9 +163,17 @@ export const DiscoveryTab = () => {
     if (!pairingServerId || !pairingCode) return;
     setIsPairing(true);
     try {
-      const params = new URLSearchParams({ code: pairingCode, serverId: pairingServerId });
-      await fetchJson("/discovery/pairing/confirm?" + params.toString(), { method: "POST" });
-      toast({ title: "Paired", description: `Server ${pairingServerId} paired` });
+      const params = new URLSearchParams({
+        code: pairingCode,
+        serverId: pairingServerId,
+      });
+      await fetchJson("/discovery/pairing/confirm?" + params.toString(), {
+        method: "POST",
+      });
+      toast({
+        title: "Paired",
+        description: `Server ${pairingServerId} paired`,
+      });
       setPairingCode("");
       setPairingServerId(null);
       loadPairedServers();
@@ -151,14 +181,16 @@ export const DiscoveryTab = () => {
       toast({
         variant: "destructive",
         title: "Confirmation failed",
-        description: e instanceof Error ? e.message : "Unable to confirm pairing",
+        description:
+          e instanceof Error ? e.message : "Unable to confirm pairing",
       });
     } finally {
       setIsPairing(false);
     }
   };
 
-  const isServerPaired = (serverId: string) => pairedServers.some((s) => s.serverId === serverId);
+  const isServerPaired = (serverId: string) =>
+    pairedServers.some((s) => s.serverId === serverId);
 
   return (
     <div className="space-y-4">
@@ -176,7 +208,11 @@ export const DiscoveryTab = () => {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            <span>{isDiscovering ? "Discovering..." : `${discoveredServers.length} server(s) found`}</span>
+            <span>
+              {isDiscovering
+                ? "Discovering..."
+                : `${discoveredServers.length} server(s) found`}
+            </span>
           </div>
           <Button
             onClick={() => {
@@ -194,13 +230,15 @@ export const DiscoveryTab = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-mono text-sm">Discovered Servers</CardTitle>
+          <CardTitle className="text-mono text-sm">
+            Discovered Servers
+          </CardTitle>
           <CardDescription className="text-mono text-xs">
             {discoveredServers.length > 0
               ? `${discoveredServers.length} server(s) available`
               : isDiscovering
-                ? "Searching for servers..."
-                : "No servers discovered yet"}
+              ? "Searching for servers..."
+              : "No servers discovered yet"}
           </CardDescription>
         </CardHeader>
         {discoveredServers.length > 0 ? (
@@ -213,8 +251,12 @@ export const DiscoveryTab = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-mono">{server.serverName}</span>
-                        {isPaired && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                        <span className="text-sm font-medium text-mono">
+                          {server.serverName}
+                        </span>
+                        {isPaired && (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground text-mono mt-1">
                         {server.host}:{server.port} ({server.protocol})
@@ -231,14 +273,18 @@ export const DiscoveryTab = () => {
                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           Pairing...
                         </>
+                      ) : isPaired ? (
+                        "Paired"
                       ) : (
-                        isPaired ? "Paired" : "Pair"
+                        "Pair"
                       )}
                     </Button>
                   </div>
                   {isPairingThis && pairingCode && (
                     <div className="mt-3 space-y-2">
-                      <Label className="text-mono text-xs">Pairing Code: {pairingCode}</Label>
+                      <Label className="text-mono text-xs">
+                        Pairing Code: {pairingCode}
+                      </Label>
                       <div className="flex gap-2">
                         <Input
                           value={pairingCode}
@@ -270,7 +316,9 @@ export const DiscoveryTab = () => {
         ) : (
           <CardContent>
             <div className="text-sm text-muted-foreground text-mono text-center py-4">
-              {isDiscovering ? "Searching for servers on your network..." : "No servers found."}
+              {isDiscovering
+                ? "Searching for servers on your network..."
+                : "No servers found."}
             </div>
           </CardContent>
         )}
@@ -292,7 +340,9 @@ export const DiscoveryTab = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-mono">{server.serverName || server.serverId}</span>
+                      <span className="text-sm font-medium text-mono">
+                        {server.serverName || server.serverId}
+                      </span>
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
                     </div>
                     <div className="text-xs text-muted-foreground text-mono mt-1">
@@ -311,7 +361,8 @@ export const DiscoveryTab = () => {
         ) : (
           <CardContent>
             <div className="text-sm text-muted-foreground text-mono text-center py-4">
-              No servers have been paired yet. Request a pairing code to get started.
+              No servers have been paired yet. Request a pairing code to get
+              started.
             </div>
           </CardContent>
         )}
@@ -319,4 +370,3 @@ export const DiscoveryTab = () => {
     </div>
   );
 };
-

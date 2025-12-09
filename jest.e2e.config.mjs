@@ -4,10 +4,10 @@
  */
 
 export default {
-  rootDir: '.',
-  testEnvironment: 'node',
-  testMatch: ['<rootDir>/tests/e2e/**/*.test.js'],
+  rootDir: ".",
+  testEnvironment: "node",
+  testMatch: ["<rootDir>/tests/e2e/**/*.test.js"],
   transform: {},
-  moduleFileExtensions: ['js', 'json'],
-  testPathIgnorePatterns: ['/node_modules/', '/server/node_modules/'],
+  moduleFileExtensions: ["js", "json"],
+  testPathIgnorePatterns: ["/node_modules/", "/server/node_modules/"],
 };

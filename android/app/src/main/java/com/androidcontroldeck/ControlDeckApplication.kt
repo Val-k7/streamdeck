@@ -42,7 +42,9 @@ class AppContainer(private val application: Application) {
 
     val assetCache by lazy { AssetCache(application) }
     private val profileStorage by lazy { ProfileStorage(application) }
-    val webSocketClient by lazy { WebSocketClient(scope = appScope, networkStatusMonitor = networkMonitor, logger = logger) }
+    val webSocketClient by lazy {
+        WebSocketClient(scope = appScope, networkStatusMonitor = networkMonitor, logger = logger)
+    }
     val profileRepository by lazy {
         ProfileRepository(
                 profileStorage,
@@ -74,9 +76,7 @@ class AppContainer(private val application: Application) {
     val diagnosticsRepository by lazy {
         DiagnosticsRepository(application, appScope, webSocketClient, logger)
     }
-    val connectionManager by lazy {
-        ConnectionManager(settingsRepository, webSocketClient)
-    }
+    val connectionManager by lazy { ConnectionManager(settingsRepository, webSocketClient) }
     val controlEventSender by lazy {
         ControlEventSender(
                 webSocketClient = webSocketClient,

@@ -50,10 +50,9 @@ export default defineConfig(({ mode }) => {
       // Augmenter la limite d'avertissement de taille de chunk
       chunkSizeWarningLimit: 1000,
     },
-    plugins: [
-      react(),
-      mode === "development" && componentTagger(),
-    ].filter(Boolean),
+    plugins: [react(), mode === "development" && componentTagger()].filter(
+      Boolean
+    ),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

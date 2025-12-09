@@ -8,10 +8,10 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -43,10 +43,10 @@ import com.androidcontroldeck.ui.navigation.Destination
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ServerWebViewScreen(
-    container: AppContainer,
-    navController: NavController? = null,
-    settings: SettingsState,
-    modifier: Modifier = Modifier
+        container: AppContainer,
+        navController: NavController? = null,
+        settings: SettingsState,
+        modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     // État de découverte
@@ -55,29 +55,31 @@ fun ServerWebViewScreen(
     val pairedServers by
             container.pairedServersRepository.pairedServers.collectAsState(initial = emptyList())
 
-    val configuredUrl = remember(settings) {
-        val ip = settings.serverIp.trim()
-        if (ip.isNotEmpty()) {
-            val protocol = if (settings.useTls) "https" else "http"
-            "$protocol://$ip:${settings.serverPort}"
-        } else {
-            null
-        }
-    }
+    val configuredUrl =
+            remember(settings) {
+                val ip = settings.serverIp.trim()
+                if (ip.isNotEmpty()) {
+                    val protocol = if (settings.useTls) "https" else "http"
+                    "$protocol://$ip:${settings.serverPort}"
+                } else {
+                    null
+                }
+            }
 
     // Serveur sélectionné pour afficher dans la WebView
     var selectedServerUrl by remember { mutableStateOf<String?>(null) }
     var webViewError by remember { mutableStateOf<String?>(null) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
-    val pullRefreshState = rememberPullRefreshState(
-            refreshing = isRefreshing,
-            onRefresh = {
-                isRefreshing = true
-                webViewRef?.reload()
-                container.serverDiscoveryManager.startDiscovery()
-            }
-    )
+    val pullRefreshState =
+            rememberPullRefreshState(
+                    refreshing = isRefreshing,
+                    onRefresh = {
+                        isRefreshing = true
+                        webViewRef?.reload()
+                        container.serverDiscoveryManager.startDiscovery()
+                    }
+            )
 
     LaunchedEffect(configuredUrl) {
         if (selectedServerUrl == null && configuredUrl != null) {
@@ -169,9 +171,9 @@ private fun ServerDiscoveryScreen(
         pairedServers: Set<String>,
         isDiscovering: Boolean,
         error: String?,
-    configuredUrl: String?,
+        configuredUrl: String?,
         onServerSelected: (DiscoveredServer) -> Unit,
-    onUseConfiguredUrl: () -> Unit,
+        onUseConfiguredUrl: () -> Unit,
         onRefresh: () -> Unit,
         onOpenSettings: () -> Unit,
         modifier: Modifier = Modifier
@@ -291,12 +293,12 @@ private fun ServerCard(server: DiscoveredServer, isPaired: Boolean, onClick: () 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 private fun ServerWebView(
-    serverUrl: String,
-    context: Context,
-    onError: (String) -> Unit,
-    onWebViewReady: (WebView) -> Unit,
-    onPageLoaded: () -> Unit,
-    modifier: Modifier = Modifier
+        serverUrl: String,
+        context: Context,
+        onError: (String) -> Unit,
+        onWebViewReady: (WebView) -> Unit,
+        onPageLoaded: () -> Unit,
+        modifier: Modifier = Modifier
 ) {
     val webView = remember {
         WebView(context).apply {

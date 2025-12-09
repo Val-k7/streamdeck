@@ -99,8 +99,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
   >(new Set());
   const statusCheckIntervalRef = useRef<number | null>(null);
 
-
-
   const cleanup = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
@@ -257,7 +255,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
 
   const sendControl = useCallback(
     async (payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">) => {
-
       // Fallback sur WebSocket standard
       if (wsRef.current?.readyState !== WebSocket.OPEN) {
         throw new Error("WebSocket is not connected");

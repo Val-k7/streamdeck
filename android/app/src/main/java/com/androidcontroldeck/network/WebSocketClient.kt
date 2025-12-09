@@ -69,11 +69,17 @@ class WebSocketClient(
     }
 
     fun updateClient(client: Any?) {
-        logger?.logDebug("StubWebSocketClient updateClient", mapOf("client" to (client?.toString() ?: "null")))
+        logger?.logDebug(
+                "StubWebSocketClient updateClient",
+                mapOf("client" to (client?.toString() ?: "null"))
+        )
     }
 
     fun updateConfig(newConfig: WebSocketConfig) {
-        logger?.logDebug("StubWebSocketClient updateConfig", mapOf("config" to newConfig.toString()))
+        logger?.logDebug(
+                "StubWebSocketClient updateConfig",
+                mapOf("config" to newConfig.toString())
+        )
     }
 
     fun send(payload: String, messageId: String? = null) {

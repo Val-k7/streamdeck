@@ -10,14 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Stub sender: keeps flows for UI feedback but does not send over WebSocket.
- */
+/** Stub sender: keeps flows for UI feedback but does not send over WebSocket. */
 class ControlEventSender(
-    private val webSocketClient: WebSocketClient,
-    private val logger: UnifiedLogger? = null,
-    private val storage: PendingActionStorage,
-    private val scope: CoroutineScope,
+        private val webSocketClient: WebSocketClient,
+        private val logger: UnifiedLogger? = null,
+        private val storage: PendingActionStorage,
+        private val scope: CoroutineScope,
 ) {
     private val _pendingActions = MutableStateFlow<List<PendingAction>>(emptyList())
     val pendingActions: StateFlow<List<PendingAction>> = _pendingActions.asStateFlow()
@@ -29,16 +27,27 @@ class ControlEventSender(
         scope.launch { _pendingActions.emit(storage.load()) }
     }
 
-    fun send(controlId: String, type: String, value: Float, meta: Map<String, String> = emptyMap()) {
+    fun send(
+            controlId: String,
+            type: String,
+            value: Float,
+            meta: Map<String, String> = emptyMap()
+    ) {
         logger?.logDebug(
-            "StubControlEventSender send",
-            mapOf("controlId" to controlId, "type" to type, "value" to value, "meta" to meta.toString())
+                "StubControlEventSender send",
+                mapOf(
+                        "controlId" to controlId,
+                        "type" to type,
+                        "value" to value,
+                        "meta" to meta.toString()
+                )
         )
-        val feedback = ActionFeedback(
-            controlId = controlId,
-            status = ActionFeedback.ActionStatus.PENDING,
-            timestamp = System.currentTimeMillis()
-        )
+        val feedback =
+                ActionFeedback(
+                        controlId = controlId,
+                        status = ActionFeedback.ActionStatus.PENDING,
+                        timestamp = System.currentTimeMillis()
+                )
         _actionFeedback.value = _actionFeedback.value + (controlId to feedback)
     }
 
