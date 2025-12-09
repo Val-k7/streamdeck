@@ -60,14 +60,15 @@ server/                     # Serveur Node.js (à la racine)
 ├── plugins/                # Système de plugins
 └── utils/                  # Utilitaires
 
-web/                       # Interface web React (à la racine)
+android/web-ui/            # Interface web React embarquée dans Android
 ├── src/                   # Code source
-└── dist/                  # Build de production
+└── dist/                  # Build (copié dans android/app/src/main/assets/web)
 ```
 
 ### Workflow Git
 
 1. **Branches** :
+
    - `main` : Code stable et testé
    - `develop` : Branche de développement
    - `feature/*` : Nouvelles fonctionnalités
@@ -178,18 +179,22 @@ npm test
 
 ```markdown
 ## Description
+
 Brève description des changements
 
 ## Type de changement
+
 - [ ] Bug fix
 - [ ] Nouvelle fonctionnalité
 - [ ] Breaking change
 - [ ] Documentation
 
 ## Tests
+
 Description des tests effectués
 
 ## Checklist
+
 - [ ] Code compilé sans erreurs
 - [ ] Tests passent
 - [ ] Documentation mise à jour
@@ -205,6 +210,7 @@ Description des tests effectués
 ## Questions ?
 
 N'hésitez pas à :
+
 - Ouvrir une issue pour poser une question
 - Rejoindre les discussions
 - Contacter les mainteneurs

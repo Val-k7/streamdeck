@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -19,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -42,6 +44,8 @@ import com.androidcontroldeck.localization.getAvailableLanguages
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
 /**
  * Écran de paramètres système Android simplifié.
@@ -58,7 +62,38 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
     var isLanguageDropdownExpanded by remember { mutableStateOf(false) }
+    var language by remember { mutableStateOf(settings.language) }
+    var serverIp by remember { mutableStateOf(settings.serverIp) }
+    var serverPortText by remember { mutableStateOf(settings.serverPort.toString()) }
+    var useTls by remember { mutableStateOf(settings.useTls) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val qrScannerLauncher = rememberLauncherForActivityResult(contract = ScanContract()) { result ->
+        val contents = result?.contents
+        if (contents.isNullOrBlank()) return@rememberLauncherForActivityResult
+
+        try {
+            val uri = Uri.parse(contents)
+            val host = uri.host
+            if (!host.isNullOrBlank()) {
+                serverIp = host
+                val scheme = uri.scheme ?: "http"
+                val port = when {
+                    uri.port > 0 -> uri.port
+                    scheme == "https" -> 443
+                    else -> 80
+                }
+                serverPortText = port.toString()
+                useTls = scheme == "https"
+                scope.launch { snackbarHostState.showSnackbar("URL mise à jour depuis le QR") }
+            } else {
+                scope.launch { snackbarHostState.showSnackbar("QR invalide: host manquant") }
+            }
+        } catch (e: Exception) {
+            scope.launch { snackbarHostState.showSnackbar("QR invalide") }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,6 +129,61 @@ fun SettingsScreen(
             Divider()
 
             Text(
+                "Connexion serveur",
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            OutlinedTextField(
+                value = serverIp,
+                onValueChange = { serverIp = it },
+                label = { Text("Adresse du serveur") },
+                placeholder = { Text("ex: 192.168.0.10") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = serverPortText,
+                onValueChange = { input -> serverPortText = input.filter { it.isDigit() } },
+                label = { Text("Port") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("TLS (HTTPS)", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        text = "Activez si votre serveur est en HTTPS",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(checked = useTls, onCheckedChange = { useTls = it })
+            }
+
+            Button(
+                onClick = {
+                    qrScannerLauncher.launch(
+                        ScanOptions()
+                            .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                            .setPrompt("Scannez le QR Control Deck")
+                            .setBeepEnabled(false)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Text("Scanner un QR de serveur")
+            }
+
+            Divider()
+
+            Text(
                 "Préférences",
                 style = MaterialTheme.typography.titleMedium
             )
@@ -103,10 +193,10 @@ fun SettingsScreen(
                 onExpandedChange = { isLanguageDropdownExpanded = it }
             ) {
                 OutlinedTextField(
-                    value = settings.language,
+                    value = language,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(stringResource(R.string.settings_language_label, settings.language)) },
+                    label = { Text(stringResource(R.string.settings_language_label, language)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor()
@@ -122,7 +212,7 @@ fun SettingsScreen(
                         DropdownMenuItem(
                             text = { Text(name) },
                             onClick = {
-                                onSettingsChanged(settings.copy(language = tag))
+                                language = tag
                                 isLanguageDropdownExpanded = false
                             },
                             modifier = Modifier.testTag("language_option_$tag")
@@ -133,9 +223,20 @@ fun SettingsScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Paramètres sauvegardés")
+                    val port = serverPortText.toIntOrNull()
+                    if (port == null || port !in 1..65535) {
+                        scope.launch { snackbarHostState.showSnackbar("Port invalide") }
+                        return@Button
                     }
+                    onSettingsChanged(
+                        settings.copy(
+                            serverIp = serverIp.trim(),
+                            serverPort = port,
+                            useTls = useTls,
+                            language = language
+                        )
+                    )
+                    scope.launch { snackbarHostState.showSnackbar("Paramètres sauvegardés") }
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -152,7 +253,6 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
 
-                val context = LocalContext.current
                 Button(
                     onClick = {
                         // Ouvrir webdev dans le navigateur

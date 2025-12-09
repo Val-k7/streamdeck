@@ -1,0 +1,22 @@
+[Unit]
+Description=Control Deck backend (FastAPI + static UI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=control-deck
+Group=control-deck
+WorkingDirectory=/opt/control-deck/server/backend
+Environment=PORT=4455
+Environment=HOST=0.0.0.0
+Environment=DECK_DECK_DATA_DIR=/var/lib/control-deck/data
+Environment=DECK_HANDSHAKE_SECRET=change-me
+Environment=DECK_DECK_TOKEN=change-me
+Environment=DECK_DISABLE_DISCOVERY=1
+ExecStart=/opt/control-deck/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 4455
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

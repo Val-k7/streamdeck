@@ -1,61 +1,61 @@
 version: 1
 project:
   name: Control Deck
-  summary: "Android deck client + Node.js control server. L'UI React est embarquée dans l'app Android."
+  summary: "Deck control: backend Python FastAPI + React UI servie par le backend; client Android en WebView."
   primary_stack:
-    - "Android (Kotlin, Jetpack Compose)"
-    - "Node.js 18 (WebSocket/REST server)"
-    - "React/TypeScript UI embarquée (android/web-ui)"
+    - "Python 3.11+ (FastAPI, WebSocket, uvicorn)"
+    - "React/TypeScript (Vite) servie par le backend"
+    - "Android (Kotlin, Jetpack Compose) client WebView"
 workspace:
   components:
-    - path: server
-      purpose: "Node server handling actions, mappings, tokens, TLS."
+    - path: server/backend
+      purpose: "Serveur Python FastAPI + WebSocket, sert les fichiers statiques."
+    - path: server/frontend
+      purpose: "UI React/Vite consommée et buildée vers server/static."
     - path: android/app
-      purpose: "Jetpack Compose client UI and device features."
-    - path: android/web-ui
-      purpose: "UI React embarquée dans WebView Android (remplace web/)."
+      purpose: "Client Kotlin minimal en WebView pointant vers le backend."
     - path: tests/e2e
-      purpose: "Jest end-to-end scenarios against a running server."
+      purpose: "Tests end-to-end contre le serveur Python + UI servie."
   generated_paths:
     - server/config
     - server/logs
     - server/profiles
+    - server/static
+    - server/backend/.venv
     - android/app/build
-    - android/app/src/main/assets/web
     - android/.gradle
-    - android/web-ui/node_modules
+    - server/frontend/node_modules
   coding_conventions:
     - "Prefer ASCII; keep existing encodings."
     - "Use rg for code/text search."
-    - "Node >=18; Android built with Java 17/Gradle; React UI built with Vite."
-routines:
+    - "Python 3.11+; Node >=18 for frontend build; Android built with Java 17/Gradle; React UI built with Vite."
   bootstrap:
-    server: "cd server && npm install"
-    web_ui: "cd android/web-ui && npm install"
+    backend: "cd server/backend && python -m venv .venv ; .venv/Scripts/activate ; pip install -r requirements.txt"
+    frontend: "cd server/frontend && npm install"
     android: "cd android && ./gradlew --no-daemon assembleDebug"
   dev:
-    server: "cd server && npm start"
-    web_ui: "cd android/web-ui && npm run dev"
+    backend: "cd server/backend && .venv/Scripts/activate ; uvicorn app.main:app --reload"
+    frontend: "cd server/frontend && npm run dev"
+  run:
+    backend_scripts: "cd server/backend && ./scripts/start.sh (ou .\\scripts\\start.ps1)"
+    docker_compose: "cd server && docker compose up --build"
   tests:
-    server_unit: "cd server && npm test"
-    server_coverage: "cd server && npm run test:coverage"
-    server_health: "cd server && npm run health"
-    web_ui_unit: "cd android/web-ui && npm test"
-    web_ui_lint: "cd android/web-ui && npm run lint"
+    backend_unit: "cd server/backend && .venv/Scripts/activate ; pytest"
+    backend_health: "exposer /health via FastAPI; tester avec httpx"
+    frontend_unit: "cd server/frontend && npm test"
+    frontend_lint: "cd server/frontend && npm run lint"
     android_unit: "cd android && ./gradlew --no-daemon test"
-    e2e: "tests/e2e/* are Jest suites; require running server + HANDSHAKE_SECRET."
+    e2e: "tests/e2e/* exécutent contre le serveur Python; nécessitent HANDSHAKE_SECRET."
   builds:
-    server_prod: "cd server && npm run build:prod"
-    web_ui: "cd android && ./gradlew buildWebUi (ou cd android/web-ui && npm run build)"
+    frontend: "cd server/frontend && npm run build (sortie dans server/static)"
     android_release: "cd android && ./scripts/build-release.sh"
-    android_full: "cd android && ./gradlew buildWebUi assembleRelease"
+    android_full: "cd android && ./gradlew assembleRelease"
   security_audits:
-    server: "cd server && ./scripts/audit-security.sh (or .ps1 on Windows)"
     android: "cd android && ./scripts/audit-dependencies.sh"
   production_gate: "scripts/verify-production-ready.sh (or .ps1 on Windows)"
 env:
   server:
-    PORT: "WebSocket/REST port (default 4455)"
+    PORT: "HTTP/WebSocket port (default 4455)"
     HOST: "Bind address (default 0.0.0.0)"
     DECK_TOKEN: "Default auth token for handshake"
     HANDSHAKE_SECRET: "Secret used to issue temporary tokens"
@@ -63,6 +63,9 @@ env:
     LOG_LEVEL: "error|warn|info|debug"
     TLS_KEY_PATH: "TLS key path (optional)"
     TLS_CERT_PATH: "TLS cert path (optional)"
+    OBS_WS_URL: "OBS WebSocket URL (default ws://localhost:4455)"
+    OBS_WS_PASSWORD: "OBS WebSocket password if set"
+    OBS_REQUEST_TIMEOUT: "OBS request timeout in seconds (default 10)"
 safety:
   - "Do not commit tokens, TLS keys, keystores, or contents of server/config, server/logs, server/profiles."
   - "Use project scripts instead of ad-hoc commands where available."
@@ -73,7 +76,7 @@ references:
     - README_PRODUCTION.md
     - INDEX_DOCUMENTATION.md
     - server/README.md
-    - android/web-ui/README.md
+    - server/frontend/README.md
     - android/DESKTOP_DEBUG.md
   scripts:
     - scripts/verify-production-ready.sh

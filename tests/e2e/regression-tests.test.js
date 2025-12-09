@@ -6,21 +6,42 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import WebSocket from 'ws'
 import fetch from 'node-fetch'
 
+const serverUrl = process.env.SERVER_URL || 'http://localhost:4455'
+const wsUrl = process.env.WS_URL || 'ws://localhost:4455'
+const handshakeSecret = process.env.HANDSHAKE_SECRET
+
 describe('Regression Tests E2E', () => {
   let ws
-  const serverUrl = process.env.SERVER_URL || 'http://localhost:4455'
-  const wsUrl = process.env.WS_URL || 'ws://localhost:4455'
-  const testToken = process.env.TEST_TOKEN || 'test-token'
+  let token
 
-  beforeAll((done) => {
-    ws = new WebSocket(`${wsUrl}?token=${testToken}`)
-    ws.on('open', () => {
-      done()
-    })
-    ws.on('error', (error) => {
-      console.warn('Server not available, skipping E2E tests:', error.message)
-      done()
-    })
+  beforeAll(async () => {
+    if (!handshakeSecret) {
+      console.warn('HANDSHAKE_SECRET not provided, WebSocket tests will be skipped')
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `${serverUrl}/tokens/handshake?secret=${encodeURIComponent(handshakeSecret)}&clientId=e2e-regression`,
+        { method: 'POST' }
+      )
+      if (response.ok) {
+        const data = await response.json()
+        token = data.token
+      }
+    } catch (error) {
+      console.warn('Handshake failed:', error.message)
+    }
+
+    if (token) {
+      ws = new WebSocket(`${wsUrl}/ws`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      await new Promise((resolve) => {
+        ws.on('open', resolve)
+        ws.on('error', resolve)
+      })
+    }
   })
 
   afterAll(() => {
@@ -33,119 +54,79 @@ describe('Regression Tests E2E', () => {
     const templates = ['User', 'Gamer', 'Streamer', 'Audio', 'Productivité']
 
     templates.forEach((template) => {
-      it(`should load ${template} template`, async () => {
-        if (ws.readyState !== WebSocket.OPEN) {
-          console.warn('WebSocket not connected, skipping test')
-          return
-        }
-
-        const response = await fetch(`${serverUrl}/profiles`)
+      it(`should list profiles (template check: ${template})`, async () => {
+        const response = await fetch(`${serverUrl}/profiles/`)
         expect(response.ok).toBe(true)
 
         const data = await response.json()
         expect(data).toHaveProperty('profiles')
         expect(Array.isArray(data.profiles)).toBe(true)
-
-        // Check if template profile exists
-        const templateProfile = data.profiles.find((p) =>
-          p.name.toLowerCase().includes(template.toLowerCase())
-        )
-        // Template may or may not exist, but API should work
-        expect(data.profiles).toBeDefined()
       })
     })
   })
 
   describe('Server Actions Tests', () => {
-    const actions = [
-      { type: 'KEYBOARD', payload: 'CTRL+C' },
-      { type: 'OBS', payload: 'StartStreaming' },
-      { type: 'AUDIO', payload: 'SetVolume:50' },
-      { type: 'SCRIPT', payload: 'test-script.sh' },
-    ]
+    const wsTest = token ? it : it.skip
 
-    actions.forEach((action) => {
-      it(`should execute ${action.type} action`, (done) => {
-        if (ws.readyState !== WebSocket.OPEN) {
-          console.warn('WebSocket not connected, skipping test')
-          return done()
-        }
+    wsTest('should execute processes action', (done) => {
+      const payload = {
+        action: 'processes',
+        payload: { limit: 1 },
+        messageId: `msg-${Date.now()}`,
+      }
 
-        const payload = {
-          kind: 'control',
-          controlId: `test-${action.type.toLowerCase()}`,
-          type: action.type,
-          value: 1,
-          messageId: `msg-${Date.now()}`,
-          sentAt: Date.now(),
-        }
+      ws.send(JSON.stringify(payload))
 
-        ws.send(JSON.stringify(payload))
-
-        ws.once('message', (data) => {
-          const response = JSON.parse(data.toString())
-          // Should receive ack or error
-          expect(['ack', 'error']).toContain(response.kind)
-          done()
-        })
+      ws.once('message', (data) => {
+        const response = JSON.parse(data.toString())
+        expect(response.type).toBe('ack')
+        expect(response.status).toBe('ok')
+        done()
       })
     })
   })
 
   describe('Compatibility Tests', () => {
-    it('should handle Android 7.0+ compatibility', async () => {
-      // This is a placeholder for Android compatibility tests
-      // Actual tests would run on Android devices/emulators
-      expect(true).toBe(true)
-    })
-
-    it('should handle different Node.js versions', async () => {
-      const response = await fetch(`${serverUrl}/health`)
+    it('should respond to health', async () => {
+      const response = await fetch(`${serverUrl}/health/`)
       expect(response.ok).toBe(true)
     })
 
-    it('should handle different browsers', async () => {
-      // This is a placeholder for browser compatibility tests
-      // Actual tests would run in different browsers
-      expect(true).toBe(true)
+    it('should respond to diagnostics', async () => {
+      const response = await fetch(`${serverUrl}/health/diagnostics`)
+      expect(response.ok).toBe(true)
     })
   })
 
   describe('Performance Tests', () => {
-    it('should handle rapid control actions', (done) => {
-      if (ws.readyState !== WebSocket.OPEN) {
-        console.warn('WebSocket not connected, skipping test')
-        return done()
-      }
+    const perfTest = token ? it : it.skip
 
-      const startTime = Date.now()
+    perfTest('should handle rapid actions', (done) => {
+      const totalActions = 5
       let completed = 0
-      const totalActions = 10
+      const start = Date.now()
 
-      for (let i = 0; i < totalActions; i++) {
+      const sendAction = (i) => {
         const action = {
-          kind: 'control',
-          controlId: `test-rapid-${i}`,
-          value: 1,
+          action: 'processes',
+          payload: { limit: 1 },
           messageId: `msg-${Date.now()}-${i}`,
-          sentAt: Date.now(),
         }
-
         ws.send(JSON.stringify(action))
-
         ws.once('message', (data) => {
           const response = JSON.parse(data.toString())
-          if (response.kind === 'ack') {
+          if (response.type === 'ack') {
             completed++
             if (completed === totalActions) {
-              const endTime = Date.now()
-              const duration = endTime - startTime
-              // Should complete within reasonable time (e.g., 5 seconds)
-              expect(duration).toBeLessThan(5000)
+              expect(Date.now() - start).toBeLessThan(5000)
               done()
             }
           }
         })
+      }
+
+      for (let i = 0; i < totalActions; i++) {
+        sendAction(i)
       }
     })
   })

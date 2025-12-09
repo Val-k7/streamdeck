@@ -7,7 +7,7 @@
 
 ## 📋 Vue d'Ensemble
 
-Control Deck est une application Android qui transforme votre tablette ou téléphone en contrôleur personnalisable pour votre ordinateur, similaire à un Stream Deck. Elle communique avec un serveur Node.js pour exécuter des actions (clavier, OBS, audio, scripts, etc.).
+Control Deck est une application Android qui transforme votre tablette ou téléphone en contrôleur personnalisable pour votre ordinateur, similaire à un Stream Deck. Elle communique avec un serveur **Python FastAPI** (qui sert aussi l'UI React buildée) pour exécuter des actions (clavier, OBS, audio, scripts, etc.).
 
 ---
 
@@ -19,22 +19,38 @@ Control Deck est une application Android qui transforme votre tablette ou télé
 
 ### Installation Standard
 
-1. **Serveur** :
+1. **Serveur Python + UI** :
+
 ```bash
-cd server
+cd server/backend
+python -m venv .venv
+.venv/Scripts/activate  # PowerShell
+pip install -r requirements.txt
+
+# (Optionnel) Build de l'UI React pour servir les fichiers statiques
+cd ../frontend
 npm install
-npm start
+npm run build
+
+# Lancer le backend (sert l'UI depuis server/static si présente)
+cd ../backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 4455
+# ou via scripts
+./scripts/start.sh  # bash
+# .\scripts\start.ps1  # PowerShell
 ```
 
 2. **Android** :
+
 ```bash
 cd android
 ./gradlew assembleDebug
 ```
 
 3. **Web UI** :
+
 ```bash
-cd web
+cd server/frontend
 npm install
 npm run dev
 ```
@@ -53,7 +69,7 @@ npm run dev
 
 - **Installation** : [`GUIDE_INSTALLATION_PRODUCTION.md`](GUIDE_INSTALLATION_PRODUCTION.md)
 - **Déploiement** : [`GUIDE_DEPLOIEMENT.md`](GUIDE_DEPLOIEMENT.md)
-- **Tests** : [`server/README_TESTING.md`](server/README_TESTING.md) et [`web/README_TESTING.md`](web/README_TESTING.md)
+- **Tests** : [`server/README_TESTING.md`](server/README_TESTING.md)
 
 ### ✅ Checklists
 
@@ -98,17 +114,22 @@ cd android
 ### Exécution
 
 ```bash
-# Serveur
-cd server
-npm test
+# Backend Python
+cd server/backend
+pytest
 
 # Android
 cd android
 ./gradlew test
 
-# Web
-cd web
+# Web UI
+cd server/frontend
 npm test
+
+# E2E (nécessite HANDSHAKE_SECRET et un backend lancé)
+cd tests/e2e
+npm install
+HANDSHAKE_SECRET=your-secret NODE_PATH="../server/node_modules" npm test
 ```
 
 ### Couverture
@@ -139,8 +160,17 @@ cd android
 ### Serveur
 
 ```bash
-cd server
-npm run build:prod
+# Build UI statique
+cd server/frontend
+npm run build  # sortie dans server/static
+
+# Lancer en production (exemple)
+cd ../backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 4455
+
+# Ou via Docker Compose
+cd ..
+docker compose up --build
 ```
 
 ---
@@ -173,16 +203,20 @@ npm run build:prod
 ## 📊 Métriques
 
 ### Sécurité
+
 - ✅ **100%** - Tous les aspects critiques
 
 ### Configuration
+
 - ✅ **100%** - Scripts et configs créés
 
 ### Tests
+
 - ✅ **Structure** : 100%
 - ⏳ **Couverture** : ~20% (structure prête pour 80%)
 
 ### Documentation
+
 - ✅ **100%** - Tous les guides créés
 
 ---
@@ -190,11 +224,13 @@ npm run build:prod
 ## ⏳ Prochaines Étapes
 
 1. **Compléter les tests** (1-2 semaines)
+
    - Atteindre 80% de couverture
    - Tests d'intégration complets
    - Tests E2E
 
 2. **Optimisations** (optionnel)
+
    - Implémenter les optimisations documentées
 
 3. **Release** 🎉

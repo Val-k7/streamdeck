@@ -11,13 +11,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Gestionnaire de synchronisation des profils avec le serveur
- */
+/** Gestionnaire de synchronisation des profils avec le serveur */
 class SyncManager(
-    private val offlineCache: OfflineCache,
-    private val profileStorage: ProfileStorage,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+        private val offlineCache: OfflineCache,
+        private val profileStorage: ProfileStorage,
+        private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     private val _syncState = MutableStateFlow<SyncState>(SyncState.Idle)
     val syncState: StateFlow<SyncState> = _syncState.asStateFlow()
@@ -25,12 +23,10 @@ class SyncManager(
     private val _pendingSyncs = MutableStateFlow<List<PendingSync>>(emptyList())
     val pendingSyncs: StateFlow<List<PendingSync>> = _pendingSyncs.asStateFlow()
 
-    /**
-     * Synchronise les profils avec le serveur
-     */
+    /** Synchronise les profils avec le serveur */
     suspend fun syncProfiles(
-        connectionState: ConnectionState,
-        serverProfiles: List<Profile>? = null
+            connectionState: ConnectionState,
+            serverProfiles: List<Profile>? = null
     ) {
         if (connectionState !is ConnectionState.Connected) {
             // Mode hors ligne : utiliser le cache
@@ -45,10 +41,17 @@ class SyncManager(
             val localProfiles = profileStorage.loadProfiles()
             offlineCache.cacheAllProfiles(localProfiles)
 
-            // 2. Si des profils serveur sont fournis, les fusionner
-            if (serverProfiles != null) {
-                // TODO: Implémenter la logique de fusion intelligente
-                // Pour l'instant, on garde les profils locaux
+            // 2. Si des profils serveur sont fournis, fusionner avec stratégie "server wins"
+            if (serverProfiles != null && serverProfiles.isNotEmpty()) {
+                // Stratégie de fusion simple : les profils serveur ont priorité
+                // Les profils locaux non présents sur le serveur sont conservés
+                val serverProfileIds = serverProfiles.map { it.id }.toSet()
+                val localOnlyProfiles = localProfiles.filter { it.id !in serverProfileIds }
+                val mergedProfiles = serverProfiles + localOnlyProfiles
+
+                // Mettre à jour le cache et le stockage local
+                offlineCache.cacheAllProfiles(mergedProfiles)
+                mergedProfiles.forEach { profile -> profileStorage.saveProfile(profile) }
             }
 
             _syncState.value = SyncState.Synced
@@ -57,27 +60,24 @@ class SyncManager(
         }
     }
 
-    /**
-     * Ajoute une synchronisation en attente
-     */
+    /** Ajoute une synchronisation en attente */
     fun addPendingSync(profile: Profile, action: SyncAction) {
         scope.launch {
-            val pending = PendingSync(
-                profileId = profile.id,
-                profile = profile,
-                action = action,
-                timestamp = System.currentTimeMillis()
-            )
+            val pending =
+                    PendingSync(
+                            profileId = profile.id,
+                            profile = profile,
+                            action = action,
+                            timestamp = System.currentTimeMillis()
+                    )
             _pendingSyncs.value = _pendingSyncs.value + pending
         }
     }
 
-    /**
-     * Traite les synchronisations en attente
-     */
+    /** Traite les synchronisations en attente */
     suspend fun processPendingSyncs(
-        connectionState: ConnectionState,
-        onSync: (Profile, SyncAction) -> Unit
+            connectionState: ConnectionState,
+            onSync: (Profile, SyncAction) -> Unit
     ) {
         if (connectionState !is ConnectionState.Connected) {
             return
@@ -96,17 +96,13 @@ class SyncManager(
         }
     }
 
-    /**
-     * Charge les profils depuis le cache hors ligne
-     */
+    /** Charge les profils depuis le cache hors ligne */
     suspend fun loadFromCache(): List<Profile> {
         return offlineCache.getAllCachedProfiles()
     }
 }
 
-/**
- * État de synchronisation
- */
+/** État de synchronisation */
 sealed class SyncState {
     object Idle : SyncState()
     object Syncing : SyncState()
@@ -115,9 +111,7 @@ sealed class SyncState {
     data class Error(val message: String) : SyncState()
 }
 
-/**
- * Action de synchronisation
- */
+/** Action de synchronisation */
 enum class SyncAction {
     UPLOAD,
     DOWNLOAD,
@@ -125,17 +119,10 @@ enum class SyncAction {
     DELETE
 }
 
-/**
- * Synchronisation en attente
- */
+/** Synchronisation en attente */
 data class PendingSync(
-    val profileId: String,
-    val profile: Profile,
-    val action: SyncAction,
-    val timestamp: Long
+        val profileId: String,
+        val profile: Profile,
+        val action: SyncAction,
+        val timestamp: Long
 )
-
-
-
-
-

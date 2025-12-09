@@ -6,33 +6,26 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: control-deck-server
+    command: ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "${PORT:-4455}"]
     ports:
-      - "4455:4455"
+      - "${PORT:-4455}:4455"
     environment:
-      - NODE_ENV=production
-      - PORT=4455
-      - LOG_LEVEL=info
-      - DECK_TOKEN=${DECK_TOKEN:-change-me-please}
-      - HANDSHAKE_SECRET=${HANDSHAKE_SECRET:-change-me-please}
+      - PORT=${PORT:-4455}
+      - HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DECK_DECK_DATA_DIR=/app/data
+      - DECK_HANDSHAKE_SECRET=${HANDSHAKE_SECRET:-change-me-please}
+      - DECK_DECK_TOKEN=${DECK_TOKEN:-change-me-please}
+      - DECK_DISABLE_DISCOVERY=${DECK_DISABLE_DISCOVERY:-0}
     volumes:
-      - ./config:/app/config
-      - ./profiles:/app/profiles
-      - ./plugins:/app/plugins
-      - ./logs:/app/logs
       - ./data:/app/data
     restart: unless-stopped
-    networks:
-      - control-deck-network
     healthcheck:
-      test: ["CMD", "node", "scripts/health-check.js", "--url=http://localhost:4455"]
+      test: ["CMD", "curl", "-f", "http://localhost:4455/health/"]
       interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-
-networks:
-  control-deck-network:
-    driver: bridge
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 
 

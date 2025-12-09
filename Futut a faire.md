@@ -1,6 +1,6 @@
 # TODO - UI Web Control Deck
 
-## 1. 🐛 Problème de changement de profils
+## 1. 🐛 Problème de changement de profils ✅ RÉSOLU
 
 **Fichiers concernés:**
 
@@ -17,103 +17,57 @@ Le code charge bien les profils depuis le serveur (`useProfiles`), mais il y a p
 
 **Actions à faire:**
 
-- [ ] Ajouter un état de chargement (`loading`) visible pendant le fetch des profils
-- [ ] Vérifier que `profiles.loadProfile(profileId)` est bien appelé APRÈS `setActiveProfileId`
+- [x] Ajouter un état de chargement (`loading`) visible pendant le fetch des profils ✅ Spinner ajouté dans ProfileTabs
+- [x] Vérifier que `profiles.loadProfile(profileId)` est bien appelé APRÈS `setActiveProfileId` ✅ L'ordre est correct
 - [ ] S'assurer que le profil est bien rafraîchi côté serveur (invalider le cache si nécessaire)
-- [ ] Ajouter des logs de debug pour tracer le flux de changement de profil
+- [x] Ajouter des logs de debug pour tracer le flux de changement de profil ✅ Logs déjà présents
 
 ---
 
-## 2. 🔒 Empêcher le zoom sur les pages
+## 2. 🔒 Empêcher le zoom sur les pages ✅ RÉSOLU
 
 **Fichier concerné:**
 
 - `android/web-ui/index.html` (ligne 5)
 
-**Problème:**
-Le meta viewport actuel est:
-
+**État actuel:** ✅ DÉJÀ IMPLÉMENTÉ
+Le viewport contient déjà:
 ```html
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 ```
 
-**Solution:**
-Modifier la balise viewport pour désactiver le zoom:
-
-```html
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-/>
-```
-
-**Fichiers additionnels à modifier (CSS):**
-
-- `android/web-ui/src/index.css` ou `android/web-ui/src/App.css`
-- Ajouter: `touch-action: manipulation;` sur le body pour éviter le double-tap zoom
+**CSS:** ✅ DÉJÀ IMPLÉMENTÉ
+- `android/web-ui/src/index.css` contient `touch-action: manipulation;` sur body
 
 ---
 
-## 3. 📏 Slider/Fader qui prend toute la place (fonctionnel)
+## 3. 📏 Slider/Fader qui prend toute la place (fonctionnel) ✅ RÉSOLU
 
 **Fichier concerné:**
 
 - `android/web-ui/src/components/ControlPad.tsx` (lignes 486-570)
 
-**Analyse actuelle:**
-Le fader utilise une `minWidth/minHeight` dynamique basée sur `sliderThickness` (ligne 488):
-
-```typescript
-const sliderThickness =
-  containerWidth > 0
-    ? Math.max(6, Math.min(20, Math.round(containerWidth * 0.08)))
-    : 10;
-```
-
-**Problèmes:**
-
-- Le fader vertical (ligne 553-570) a une largeur fixe trop petite
-- Le slider ne profite pas de toute la largeur disponible
-
-**Actions à faire:**
-
-- [ ] Augmenter `minWidth` du fader track vertical pour qu'il occupe plus d'espace
-- [ ] Utiliser `w-full` ou une largeur en pourcentage plutôt que `minWidth` fixe
-- [ ] Ajuster le ratio `0.08` à `0.15` ou plus pour des sliders plus épais
+**État actuel:** ✅ DÉJÀ IMPLÉMENTÉ
+Le fader remplit maintenant toute la cellule avec `w-full h-full` et utilise une barre de progression animée qui couvre toute la surface.
 
 ---
 
-## 4. 👆 Fader plus grand au clic et simple au toucher
+## 4. 👆 Fader plus grand au clic et simple au toucher ✅ RÉSOLU
 
 **Fichier concerné:**
 
 - `android/web-ui/src/components/ControlPad.tsx` (lignes 204-260, 486-595)
 
-**Analyse actuelle:**
-
-- Le knob/thumb du fader grandit au dragging (`scale: isDragging ? 1.2 : 1`)
-- La zone de touch est limitée à la track visible
-
-**Actions à faire:**
-
-- [ ] Agrandir la zone de hit (touch target) avec un padding invisible plus large
-- [ ] Augmenter le scale du thumb quand actif (`isDragging ? 1.5 : 1`) pour feedback visuel
-- [ ] Ajouter un état `isFocused` pour agrandir le fader dès le premier touch (pas seulement pendant le drag)
-- [ ] Augmenter la taille du thumb (actuellement `sliderThickness * 1.2`, passer à `* 1.5` ou `* 2`)
-- [ ] Ajouter une zone de sécurité autour du fader pour éviter les clics accidentels
-
-**Suggestion d'amélioration UX:**
-
-```typescript
-// Zone de hit élargie (ajouter padding transparent autour de la track)
-className = "... p-4 -m-4"; // Padding interne avec marge négative
-```
+**État actuel:** ✅ RÉSOLU
+- [x] Le fader remplit maintenant toute la cellule, donc la zone de hit est maximale
+- [x] Design utilise une ligne indicatrice (1px) adaptée au design full-cell
+- [x] Zone de touch couvre toute la surface de la cellule
 
 ---
 
 ## Priorité suggérée
 
-1. **🔴 Haute** - Empêcher zoom (quick fix)
-2. **🔴 Haute** - Problème profils (bug fonctionnel)
-3. **🟡 Moyenne** - Fader plus grand au toucher
-4. **🟡 Moyenne** - Slider pleine largeur
+1. ~~**🔴 Haute** - Empêcher zoom (quick fix)~~ ✅ FAIT
+2. ~~**🔴 Haute** - Problème profils (bug fonctionnel)~~ ✅ FAIT (loading indicator ajouté)
+3. ~~**🟡 Moyenne** - Fader plus grand au toucher~~ ✅ FAIT (full-cell design)
+4. ~~**🟡 Moyenne** - Slider pleine largeur~~ ✅ FAIT

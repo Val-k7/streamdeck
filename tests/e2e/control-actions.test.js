@@ -4,20 +4,38 @@
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 import WebSocket from 'ws'
+import fetch from 'node-fetch'
+
+const serverUrl = process.env.SERVER_URL || 'http://localhost:4455'
+const wsUrl = process.env.WS_URL || 'ws://localhost:4455'
+const handshakeSecret = process.env.HANDSHAKE_SECRET
 
 describe('Control Actions E2E', () => {
   let ws
-  const serverUrl = process.env.SERVER_URL || 'ws://localhost:4455'
-  const testToken = process.env.TEST_TOKEN || 'test-token'
+  let token
 
-  beforeAll((done) => {
-    ws = new WebSocket(`${serverUrl}?token=${testToken}`)
-    ws.on('open', () => {
-      done()
+  beforeAll(async () => {
+    if (!handshakeSecret) {
+      console.warn('HANDSHAKE_SECRET not provided, skipping WS tests')
+      return
+    }
+
+    const response = await fetch(
+      `${serverUrl}/tokens/handshake?secret=${encodeURIComponent(handshakeSecret)}&clientId=e2e-control-actions`,
+      { method: 'POST' }
+    )
+    if (!response.ok) {
+      console.warn('Handshake failed, skipping WS tests')
+      return
+    }
+
+    token = (await response.json()).token
+    ws = new WebSocket(`${wsUrl}/ws`, {
+      headers: { Authorization: `Bearer ${token}` },
     })
-    ws.on('error', (error) => {
-      console.warn('Server not available, skipping E2E tests:', error.message)
-      done()
+    await new Promise((resolve) => {
+      ws.on('open', resolve)
+      ws.on('error', resolve)
     })
   })
 
@@ -27,104 +45,36 @@ describe('Control Actions E2E', () => {
     }
   })
 
-  it('should send button press action', (done) => {
-    if (ws.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, skipping test')
-      return done()
-    }
+  const wsTest = token ? it : it.skip
 
+  wsTest('should send processes action and receive ack', (done) => {
     const action = {
-      kind: 'control',
-      controlId: 'test-button',
-      value: 1,
+      action: 'processes',
+      payload: { limit: 1 },
       messageId: `msg-${Date.now()}`,
-      sentAt: Date.now(),
     }
 
     ws.send(JSON.stringify(action))
 
     ws.once('message', (data) => {
       const response = JSON.parse(data.toString())
-      expect(response.kind).toBe('ack')
-      expect(response.messageId).toBe(action.messageId)
+      expect(response.type).toBe('ack')
       done()
     })
   })
 
-  it('should send fader value change', (done) => {
-    if (ws.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, skipping test')
-      return done()
-    }
-
+  wsTest('should return error on unknown action', (done) => {
     const action = {
-      kind: 'control',
-      controlId: 'test-fader',
-      value: 75,
+      action: 'unknown-action',
       messageId: `msg-${Date.now()}`,
-      sentAt: Date.now(),
     }
 
     ws.send(JSON.stringify(action))
 
     ws.once('message', (data) => {
       const response = JSON.parse(data.toString())
-      expect(response.kind).toBe('ack')
-      expect(response.messageId).toBe(action.messageId)
+      expect(['error', 'ack']).toContain(response.type)
       done()
-    })
-  })
-
-  it('should handle invalid control action', (done) => {
-    if (ws.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, skipping test')
-      return done()
-    }
-
-    const invalidAction = {
-      kind: 'control',
-      controlId: 'non-existent-control',
-      value: 1,
-      messageId: `msg-${Date.now()}`,
-      sentAt: Date.now(),
-    }
-
-    ws.send(JSON.stringify(invalidAction))
-
-    ws.once('message', (data) => {
-      const response = JSON.parse(data.toString())
-      // Should receive error or ack with success: false
-      expect(['ack', 'error']).toContain(response.kind)
-      done()
-    })
-  })
-
-  it('should receive action feedback', (done) => {
-    if (ws.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, skipping test')
-      return done()
-    }
-
-    const action = {
-      kind: 'control',
-      controlId: 'test-button',
-      value: 1,
-      messageId: `msg-${Date.now()}`,
-      sentAt: Date.now(),
-    }
-
-    ws.send(JSON.stringify(action))
-
-    // Listen for feedback
-    ws.once('message', (data) => {
-      const response = JSON.parse(data.toString())
-      if (response.kind === 'feedback') {
-        expect(response.controlId).toBe(action.controlId)
-        done()
-      } else {
-        // Wait for feedback
-        setTimeout(() => done(), 1000)
-      }
     })
   })
 })

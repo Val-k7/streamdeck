@@ -107,7 +107,20 @@ async function handleMyAction(payload) {
 
 Voir les dossiers `examples/` pour des exemples de plugins.
 
+## Plugins Inclus
 
+### OBS (`obs/`)
+**Statut** : ✅ Stable  
+Contrôle OBS Studio via obs-websocket.
 
+### Spotify (`spotify/`)
+**Statut** : ⚠️ Expérimental  
+Contrôle Spotify via les raccourcis clavier système.  
+L'API Spotify pour le contrôle du volume, shuffle et repeat n'est pas encore implémentée.
+
+### Discord (`discord/`)
+**Statut** : ⚠️ Expérimental  
+Contrôle Discord via les raccourcis clavier système (mute, deafen).  
+L'API Discord RPC n'est pas encore implémentée.
 
 
