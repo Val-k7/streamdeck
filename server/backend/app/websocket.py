@@ -19,6 +19,10 @@ connections: Set[WebSocket] = set()
 async def websocket_endpoint(ws: WebSocket):
     token = ws.headers.get("authorization")
     token = token[7:] if token and token.lower().startswith("bearer ") else token
+
+    if not token:
+        token = ws.query_params.get("token")
+
     if token_manager.stats()["active"] > 0 and not token_manager.is_valid(token):
         await ws.close(code=4001)
         return

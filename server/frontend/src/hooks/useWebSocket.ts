@@ -146,7 +146,14 @@ export const useWebSocket = (): UseWebSocketReturn => {
 
       try {
         logger.debug("useWebSocket: connect via WebSocket", config.url);
-        const ws = new WebSocket(config.url);
+
+        let urlToUse = config.url;
+        if (config.token) {
+          const sep = config.url.includes("?") ? "&" : "?";
+          urlToUse = `${config.url}${sep}token=${encodeURIComponent(config.token)}`;
+        }
+
+        const ws = new WebSocket(urlToUse);
         wsRef.current = ws;
 
         ws.onopen = () => {
