@@ -12,10 +12,11 @@ interface WebSocketConfig {
 }
 
 interface ControlPayload {
-  kind: "control";
-  controlId: string;
-  type: string;
-  value: number;
+  action: string;
+  payload?: Record<string, unknown> | string | null;
+  controlId?: string;
+  type?: string;
+  value?: number;
   messageId: string;
   sentAt: number;
   meta?: Record<string, unknown>;
@@ -59,7 +60,7 @@ export interface UseWebSocketReturn {
   connect: (config: WebSocketConfig) => void;
   disconnect: () => void;
   sendControl: (
-    payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">
+    payload: Omit<ControlPayload, "messageId" | "sentAt">
   ) => Promise<void>;
   selectProfile: (profileId: string, resetState?: boolean) => Promise<void>;
   onAck: (callback: (ack: AckPayload) => void) => void;
@@ -261,8 +262,11 @@ export const useWebSocket = (): UseWebSocketReturn => {
   }, [cleanup]);
 
   const sendControl = useCallback(
-    async (payload: Omit<ControlPayload, "kind" | "messageId" | "sentAt">) => {
-      // Fallback sur WebSocket standard
+    async (payload: Omit<ControlPayload, "messageId" | "sentAt">) => {
+      if (!payload.action) {
+        throw new Error("Control payload missing action");
+      }
+
       if (wsRef.current?.readyState !== WebSocket.OPEN) {
         throw new Error("WebSocket is not connected");
       }
@@ -271,7 +275,6 @@ export const useWebSocket = (): UseWebSocketReturn => {
         .toString(36)
         .substr(2, 9)}`;
       const fullPayload: ControlPayload = {
-        kind: "control",
         ...payload,
         messageId,
         sentAt: Date.now(),

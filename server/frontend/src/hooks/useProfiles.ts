@@ -139,11 +139,11 @@ export const useProfiles = (config: UseProfilesConfig): UseProfilesReturn => {
 
   // Charger les profils au démarrage si l'URL est configurée
   useEffect(() => {
-    if (config.serverUrl) {
-      logger.debug("useProfiles: Loading profiles via HTTP", config.serverUrl);
-      loadProfiles();
-    }
-  }, [config.serverUrl, loadProfiles]);
+    // Always try to load profiles, even when using same-origin (serverUrl can be empty => relative fetch)
+    logger.debug("useProfiles: Loading profiles via HTTP", config.serverUrl || "<relative>");
+    loadProfiles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.serverUrl]);
 
   return {
     profiles,

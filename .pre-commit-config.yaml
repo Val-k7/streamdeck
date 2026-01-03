@@ -1,0 +1,91 @@
+# Pre-commit hooks for Control Deck
+# See https://pre-commit.com for more information
+
+repos:
+  # General checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+
+  # Python: Black formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3.11
+        files: ^server/backend/
+        args: ['--line-length=100']
+
+  # Python: isort import sorting
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ^server/backend/
+        args: ['--profile=black', '--line-length=100']
+
+  # Python: Pylint
+  - repo: https://github.com/PyCQA/pylint
+    rev: v3.0.3
+    hooks:
+      - id: pylint
+        files: ^server/backend/app/
+        args:
+          - --max-line-length=100
+          - --disable=C0111,C0103,R0913,R0914
+
+  # Python: Mypy type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        files: ^server/backend/
+        additional_dependencies:
+          - types-requests
+        args: ['--ignore-missing-imports']
+
+  # Python: Bandit security linting
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        files: ^server/backend/
+        args: ['-c', 'pyproject.toml']
+        additional_dependencies: ['bandit[toml]']
+
+  # TypeScript/JavaScript: Prettier
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        files: ^server/frontend/src/.*\.(ts|tsx|js|jsx|json|css)$
+        args: ['--write']
+
+  # TypeScript: ESLint
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.0.0-beta.0
+    hooks:
+      - id: eslint
+        files: ^server/frontend/src/.*\.(ts|tsx|js|jsx)$
+        types: [file]
+        args: ['--fix']
+        additional_dependencies:
+          - eslint@^9.0.0
+          - '@typescript-eslint/eslint-plugin@^6.0.0'
+          - '@typescript-eslint/parser@^6.0.0'
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: ['--fix']

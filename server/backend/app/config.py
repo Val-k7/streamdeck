@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     tls_key_path: Optional[Path] = None
     tls_cert_path: Optional[Path] = None
 
+    # Security settings
+    allowed_origins: str = "http://localhost:3000,http://localhost:4455"
+    max_message_size: int = 102400  # 100KB
+    rate_limit_requests: int = 100
+    rate_limit_window: int = 60  # seconds
+
     class Config:
         env_prefix = "DECK_"
         case_sensitive = False

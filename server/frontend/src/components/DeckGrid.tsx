@@ -345,18 +345,67 @@ export const DeckGrid = ({
   const handlePadPress = async (pad: PadConfig) => {
     logger.debug("DeckGrid: pad pressed", pad.id, pad.type, pad.action);
 
+    const controlValue =
+      pad.type === "toggle"
+        ? profileState.padStates[pad.id]
+          ? 0
+          : 1
+        : 1;
+
+    const actionType = pad.action?.type?.toLowerCase() || "";
+    let parsedPayload: Record<string, unknown> | string | null =
+      pad.action?.payload ?? null;
+
+    if (typeof parsedPayload === "string") {
+      const trimmed = parsedPayload.trim();
+      if (trimmed.length > 0) {
+        try {
+          parsedPayload = JSON.parse(trimmed);
+        } catch (error) {
+          logger.warn("DeckGrid: payload parse failed, using raw action", {
+            id: pad.id,
+            error,
+          });
+          parsedPayload = { action: trimmed };
+        }
+      } else {
+        parsedPayload = null;
+      }
+    }
+
+    if (parsedPayload && typeof parsedPayload === "object") {
+      const enriched: Record<string, unknown> = {
+        ...parsedPayload,
+      };
+
+      if (pad.type === "fader") {
+        const numericValue = Number(controlValue) || 0;
+        enriched.value = numericValue;
+        if (enriched.volume === undefined) {
+          enriched.volume = numericValue;
+        }
+        if (enriched.volumeDb === undefined) {
+          enriched.volumeDb = numericValue;
+        }
+      }
+
+      parsedPayload = enriched;
+    }
+
+    if (!actionType) {
+      logger.warn("DeckGrid: missing action type, skipping send", pad);
+      return;
+    }
+
     // Envoyer l'action au serveur via WebSocket
     if (websocket?.status === "online" && websocket.sendControl) {
       try {
         await websocket.sendControl({
+          action: actionType,
+          payload: parsedPayload ?? undefined,
           controlId: pad.id,
           type: pad.type || "button",
-          value:
-            pad.type === "toggle"
-              ? profileState.padStates[pad.id]
-                ? 0
-                : 1
-              : 1,
+          value: controlValue,
           meta: pad.action ? { actionType: pad.action.type } : undefined,
         });
         logger.debug("DeckGrid: control sent successfully", pad.id);
